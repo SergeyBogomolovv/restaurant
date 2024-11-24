@@ -11,6 +11,14 @@ type CustomerRepo interface {
 	CreateCustomer(ctx context.Context, dto *domain.RegisterCustomerDTO) (string, error)
 }
 
-type AdminRepo interface{}
-type WaiterRepo interface{}
+type AdminRepo interface {
+	CheckLoginExists(ctx context.Context, login string) (bool, error)
+	CreateAdmin(ctx context.Context, dto *domain.RegisterAdminDTO) (string, error)
+}
+
+type WaiterRepo interface {
+	CheckLoginExists(ctx context.Context, login string) (bool, error)
+	CreateWaiter(ctx context.Context, dto *domain.RegisterWaiterDTO) (string, error)
+}
+
 type TokensRepo interface{}

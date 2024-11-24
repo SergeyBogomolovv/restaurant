@@ -71,7 +71,12 @@ func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterR
 
 	entityID, err := h.register.RegisterWaiter(ctx, dto, req.SecretToken)
 	if err != nil {
-		//TODO: handle errors
+		if err == er.ErrInvalidToken {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
+		}
+		if err == er.ErrWaiterAlreadyExists {
+			return nil, status.Errorf(codes.AlreadyExists, "Waiter with this login already exists")
+		}
 		return nil, status.Errorf(codes.Internal, "failed to register waiter, error: %v", err)
 	}
 	return &pb.RegisterResponse{EntityId: entityID}, nil
@@ -89,7 +94,12 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 	}
 	entityID, err := h.register.RegisterAdmin(ctx, dto, req.SecretToken)
 	if err != nil {
-		//TODO: handle errors
+		if err == er.ErrInvalidToken {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
+		}
+		if err == er.ErrAdminAlreadyExists {
+			return nil, status.Errorf(codes.AlreadyExists, "Admin with this login already exists")
+		}
 		return nil, status.Errorf(codes.Internal, "failed to register admin, error: %v", err)
 	}
 	return &pb.RegisterResponse{EntityId: entityID}, nil
