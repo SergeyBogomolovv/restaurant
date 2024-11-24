@@ -1,7 +1,8 @@
 env: 'local'
-postgres_url: 'postgres://postgres:postgres@localhost:5432/restaurant?sslmode=disable'
+postgres_url: 'postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable'
 redis_url: 'redis://localhost:6379/0'
 sso:
+  secret_key: 'local-secret-key'
   port: 10116
   timeout: 10h
 jwt:

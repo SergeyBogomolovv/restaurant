@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package sso;
+
+option go_package = "/sso/pb";
+
+service SSO {
+  rpc RegisterCustomer(RegisterCustomerRequest) returns (RegisterResponse);
+  rpc RegisterWaiter(RegisterWaiterRequest) returns (RegisterResponse);
+  rpc RegisterAdmin(RegisterAdminRequest) returns (RegisterResponse);
+
+  rpc LoginCustomer(LoginCustomerRequest) returns (LoginResponse);
+  rpc LoginWaiter(LoginEmployeeRequest) returns (LoginResponse);
+  rpc LoginAdmin(LoginEmployeeRequest) returns (LoginResponse);
+
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message RegisterWaiterRequest {
+  string login = 1;
+  string password = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string secret_token = 5;
+}
+
+message RegisterAdminRequest {
+  string login = 1;
+  string password = 2;
+  string note = 3;
+  string secret_token = 4;
+}
+
+message RegisterCustomerRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  int64 birthdate = 4;
+}
+
+message RegisterResponse {
+  string entity_id = 1;
+}
+
+message LoginCustomerRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginEmployeeRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string accessToken = 1;
+  string refreshToken = 2;
+}
+
+message RefreshRequest {
+  string refreshToken = 1;
+}
+
+message RefreshResponse {
+  string accessToken = 1;
+}
+
+message LogoutRequest {
+  string refreshToken = 1;
+}
+
+message LogoutResponse {
+  string status = 1;
+}
