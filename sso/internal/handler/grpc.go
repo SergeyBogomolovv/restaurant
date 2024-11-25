@@ -5,7 +5,6 @@ import (
 	"time"
 
 	pb "github.com/SergeyBogomolovv/restaurant/common/api/gen/sso"
-	er "github.com/SergeyBogomolovv/restaurant/common/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/grpc"
@@ -49,7 +48,7 @@ func (h *ssoHandler) RegisterCustomer(ctx context.Context, req *pb.RegisterCusto
 	}
 	entityID, err := h.register.RegisterCustomer(ctx, dto)
 	if err != nil {
-		if err == er.ErrCustomerAlreadyExists {
+		if err == domain.ErrCustomerAlreadyExists {
 			return nil, status.Errorf(codes.AlreadyExists, "Customer with this email already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register customer, error: %v", err)
@@ -71,10 +70,10 @@ func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterR
 
 	entityID, err := h.register.RegisterWaiter(ctx, dto, req.SecretToken)
 	if err != nil {
-		if err == er.ErrInvalidToken {
+		if err == domain.ErrInvalidSecretToken {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
 		}
-		if err == er.ErrWaiterAlreadyExists {
+		if err == domain.ErrWaiterAlreadyExists {
 			return nil, status.Errorf(codes.AlreadyExists, "Waiter with this login already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register waiter, error: %v", err)
@@ -94,10 +93,10 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 	}
 	entityID, err := h.register.RegisterAdmin(ctx, dto, req.SecretToken)
 	if err != nil {
-		if err == er.ErrInvalidToken {
+		if err == domain.ErrInvalidSecretToken {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
 		}
-		if err == er.ErrAdminAlreadyExists {
+		if err == domain.ErrAdminAlreadyExists {
 			return nil, status.Errorf(codes.AlreadyExists, "Admin with this login already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register admin, error: %v", err)

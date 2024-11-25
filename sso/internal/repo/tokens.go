@@ -3,12 +3,10 @@ package repo
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
-	er "github.com/SergeyBogomolovv/restaurant/common/errors"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
 	"github.com/golang-jwt/jwt/v5"
@@ -65,18 +63,12 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, ro
 func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (string, error) {
 	token, err := verifyToken(token, r.jwtSecret)
 	if err != nil {
-		if errors.Is(err, er.ErrInvalidToken) {
-			return "", er.ErrUnauthorized
-		}
-		return "", err
+		return "", domain.ErrInvalidCredentials
 	}
 
 	res, err := r.db.Get(ctx, tokenKey(token)).Bytes()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return "", er.ErrUnauthorized
-		}
-		return "", err
+		return "", domain.ErrInvalidCredentials
 	}
 
 	var payload domain.RefreshTokenPayload
@@ -85,7 +77,7 @@ func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (stri
 	}
 
 	if payload.ExpiresAt.Before(time.Now()) {
-		return "", er.ErrUnauthorized
+		return "", domain.ErrInvalidCredentials
 	}
 	return payload.UserID, nil
 }
@@ -93,10 +85,7 @@ func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (stri
 func (r *tokensRepo) RevokeRefreshToken(ctx context.Context, token string) error {
 	token, err := verifyToken(token, r.jwtSecret)
 	if err != nil {
-		if errors.Is(err, er.ErrInvalidToken) {
-			return er.ErrUnauthorized
-		}
-		return err
+		return domain.ErrInvalidCredentials
 	}
 	return r.db.Del(ctx, tokenKey(token)).Err()
 }
@@ -106,7 +95,7 @@ func verifyToken(token string, secret []byte) (string, error) {
 		return secret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", er.ErrInvalidToken
+		return "", domain.ErrInvalidCredentials
 	}
 	return parsed.Claims.GetSubject()
 }

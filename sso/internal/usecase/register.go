@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	er "github.com/SergeyBogomolovv/restaurant/common/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,7 +40,7 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, dto *domain.Regi
 
 	if isExists {
 		log.Info("customer with this email already exists")
-		return "", er.ErrCustomerAlreadyExists
+		return "", domain.ErrCustomerAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword(dto.Password, bcrypt.DefaultCost)
@@ -69,7 +68,7 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, dto *domain.Regist
 
 	if dto.Token != u.secretKey {
 		log.Info("invalid secret token")
-		return "", er.ErrInvalidToken
+		return "", domain.ErrInvalidSecretToken
 	}
 	isExists, err := u.waiters.CheckLoginExists(ctx, dto.Login)
 	if err != nil {
@@ -79,7 +78,7 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, dto *domain.Regist
 
 	if isExists {
 		log.Info("waiter with this login already exists")
-		return "", er.ErrWaiterAlreadyExists
+		return "", domain.ErrWaiterAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword(dto.Password, bcrypt.DefaultCost)
@@ -107,7 +106,7 @@ func (u *registerUsecase) RegisterAdmin(ctx context.Context, dto *domain.Registe
 
 	if dto.Token != u.secretKey {
 		log.Info("invalid secret token")
-		return "", er.ErrInvalidToken
+		return "", domain.ErrInvalidSecretToken
 	}
 
 	isExists, err := u.admins.CheckLoginExists(ctx, dto.Login)
@@ -118,7 +117,7 @@ func (u *registerUsecase) RegisterAdmin(ctx context.Context, dto *domain.Registe
 
 	if isExists {
 		log.Info("admin with this login already exists")
-		return "", er.ErrAdminAlreadyExists
+		return "", domain.ErrAdminAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword(dto.Password, bcrypt.DefaultCost)

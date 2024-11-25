@@ -9,3 +9,8 @@ type RefreshTokenPayload struct {
 	ExpiresAt time.Time `json:"expires_at"`
 	Role      string    `json:"role"`
 }
+
+type JwtPayload struct {
+	EntityID string
+	Role     string
+}
