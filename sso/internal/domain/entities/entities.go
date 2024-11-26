@@ -1,4 +1,4 @@
-package models
+package entities
 
 import "time"
 
@@ -29,4 +29,10 @@ type AdminEntity struct {
 	Note     string `db:"note"`
 	Login    string `db:"login"`
 	Password []byte `db:"password"`
+}
+
+type RefreshTokenEntity struct {
+	UserID    string    `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Role      string    `json:"role"`
 }

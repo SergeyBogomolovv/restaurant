@@ -2,11 +2,14 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	pb "github.com/SergeyBogomolovv/restaurant/common/api/gen/sso"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,9 +18,9 @@ import (
 type AuthUsecase interface{}
 
 type RegisterUsecase interface {
-	RegisterCustomer(ctx context.Context, dto *domain.RegisterCustomerDTO) (string, error)
-	RegisterWaiter(ctx context.Context, dto *domain.RegisterWaiterDTO, token string) (string, error)
-	RegisterAdmin(ctx context.Context, dto *domain.RegisterAdminDTO, token string) (string, error)
+	RegisterCustomer(ctx context.Context, dto *dto.RegisterCustomerDTO) (uuid.UUID, error)
+	RegisterWaiter(ctx context.Context, dto *dto.RegisterWaiterDTO, token string) (uuid.UUID, error)
+	RegisterAdmin(ctx context.Context, dto *dto.RegisterAdminDTO, token string) (uuid.UUID, error)
 }
 
 type ssoHandler struct {
@@ -37,29 +40,29 @@ func RegisterGRPCHandler(server *grpc.Server, auth AuthUsecase, register Registe
 }
 
 func (h *ssoHandler) RegisterCustomer(ctx context.Context, req *pb.RegisterCustomerRequest) (*pb.RegisterResponse, error) {
-	dto := &domain.RegisterCustomerDTO{
+	dto := &dto.RegisterCustomerDTO{
 		Email:     req.Email,
 		Name:      req.Name,
 		Birthdate: time.Unix(req.Birthdate, 0),
-		Password:  []byte(req.Password),
+		Password:  req.Password,
 	}
 	if err := h.validate.Struct(dto); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
 	}
 	entityID, err := h.register.RegisterCustomer(ctx, dto)
 	if err != nil {
-		if err == domain.ErrCustomerAlreadyExists {
+		if errors.Is(err, errs.ErrCustomerAlreadyExists) {
 			return nil, status.Errorf(codes.AlreadyExists, "Customer with this email already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register customer, error: %v", err)
 	}
-	return &pb.RegisterResponse{EntityId: entityID}, nil
+	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
 
 func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterRequest) (*pb.RegisterResponse, error) {
-	dto := &domain.RegisterWaiterDTO{
+	dto := &dto.RegisterWaiterDTO{
 		Login:     req.Login,
-		Password:  []byte(req.Password),
+		Password:  req.Password,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Token:     req.SecretToken,
@@ -70,22 +73,22 @@ func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterR
 
 	entityID, err := h.register.RegisterWaiter(ctx, dto, req.SecretToken)
 	if err != nil {
-		if err == domain.ErrInvalidSecretToken {
+		if errors.Is(err, errs.ErrInvalidSecretToken) {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
 		}
-		if err == domain.ErrWaiterAlreadyExists {
+		if errors.Is(err, errs.ErrWaiterAlreadyExists) {
 			return nil, status.Errorf(codes.AlreadyExists, "Waiter with this login already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register waiter, error: %v", err)
 	}
-	return &pb.RegisterResponse{EntityId: entityID}, nil
+	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
 
 func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminRequest) (*pb.RegisterResponse, error) {
-	dto := &domain.RegisterAdminDTO{
+	dto := &dto.RegisterAdminDTO{
 		Note:     req.Note,
 		Login:    req.Login,
-		Password: []byte(req.Password),
+		Password: req.Password,
 		Token:    req.SecretToken,
 	}
 	if err := h.validate.Struct(dto); err != nil {
@@ -93,15 +96,15 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 	}
 	entityID, err := h.register.RegisterAdmin(ctx, dto, req.SecretToken)
 	if err != nil {
-		if err == domain.ErrInvalidSecretToken {
+		if errors.Is(err, errs.ErrInvalidSecretToken) {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
 		}
-		if err == domain.ErrAdminAlreadyExists {
+		if errors.Is(err, errs.ErrAdminAlreadyExists) {
 			return nil, status.Errorf(codes.AlreadyExists, "Admin with this login already exists")
 		}
 		return nil, status.Errorf(codes.Internal, "failed to register admin, error: %v", err)
 	}
-	return &pb.RegisterResponse{EntityId: entityID}, nil
+	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
 
 func (h *ssoHandler) LoginCustomer(ctx context.Context, req *pb.LoginCustomerRequest) (*pb.LoginResponse, error) {

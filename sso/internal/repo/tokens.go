@@ -8,7 +8,8 @@ import (
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
 
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
+	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -45,7 +46,7 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, ro
 		return "", err
 	}
 
-	payload, err := json.Marshal(&domain.RefreshTokenPayload{
+	payload, err := json.Marshal(&entities.RefreshTokenEntity{
 		UserID:    userID,
 		ExpiresAt: exp,
 		Role:      role,
@@ -63,21 +64,21 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, ro
 func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (string, error) {
 	token, err := verifyToken(token, r.jwtSecret)
 	if err != nil {
-		return "", domain.ErrInvalidCredentials
+		return "", errs.ErrInvalidCredentials
 	}
 
 	res, err := r.db.Get(ctx, tokenKey(token)).Bytes()
 	if err != nil {
-		return "", domain.ErrInvalidCredentials
+		return "", errs.ErrInvalidCredentials
 	}
 
-	var payload domain.RefreshTokenPayload
+	var payload entities.RefreshTokenEntity
 	if err := json.Unmarshal(res, &payload); err != nil {
 		return "", err
 	}
 
 	if payload.ExpiresAt.Before(time.Now()) {
-		return "", domain.ErrInvalidCredentials
+		return "", errs.ErrInvalidCredentials
 	}
 	return payload.UserID, nil
 }
@@ -85,7 +86,7 @@ func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (stri
 func (r *tokensRepo) RevokeRefreshToken(ctx context.Context, token string) error {
 	token, err := verifyToken(token, r.jwtSecret)
 	if err != nil {
-		return domain.ErrInvalidCredentials
+		return errs.ErrInvalidCredentials
 	}
 	return r.db.Del(ctx, tokenKey(token)).Err()
 }
@@ -95,7 +96,7 @@ func verifyToken(token string, secret []byte) (string, error) {
 		return secret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", domain.ErrInvalidCredentials
+		return "", errs.ErrInvalidCredentials
 	}
 	return parsed.Claims.GetSubject()
 }

@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -28,11 +29,11 @@ func (r *customerRepo) CheckEmailExists(ctx context.Context, email string) (bool
 	return isExists, nil
 }
 
-func (r *customerRepo) CreateCustomer(ctx context.Context, dto *domain.RegisterCustomerDTO) (string, error) {
-	var customerId string
+func (r *customerRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (uuid.UUID, error) {
+	var customerId uuid.UUID
 	query := "INSERT INTO customers (email, password, name, birth_date) VALUES ($1, $2, $3, $4) RETURNING customer_id"
 	if err := r.db.GetContext(ctx, &customerId, query, dto.Email, dto.Password, dto.Name, dto.Birthdate); err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 	return customerId, nil
 }
