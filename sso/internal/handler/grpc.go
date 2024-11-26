@@ -15,7 +15,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type AuthUsecase interface{}
+type AuthUsecase interface {
+	LoginCustomer(ctx context.Context, dto *dto.LoginCustomerDTO) (*dto.TokensDTO, error)
+	LoginWaiter(ctx context.Context, dto *dto.LoginEmployeeDTO) (*dto.TokensDTO, error)
+	LoginAdmin(ctx context.Context, dto *dto.LoginEmployeeDTO) (*dto.TokensDTO, error)
+	Refresh(ctx context.Context, token string) (string, error)
+	Logout(ctx context.Context, token string) error
+}
 
 type RegisterUsecase interface {
 	RegisterCustomer(ctx context.Context, dto *dto.RegisterCustomerDTO) (uuid.UUID, error)
@@ -108,17 +114,70 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 }
 
 func (h *ssoHandler) LoginCustomer(ctx context.Context, req *pb.LoginCustomerRequest) (*pb.LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LoginCustomer not implemented")
+	dto := &dto.LoginCustomerDTO{
+		Email:    req.Email,
+		Password: req.Password,
+	}
+	if err := h.validate.Struct(dto); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
+	}
+	tokens, err := h.auth.LoginCustomer(ctx, dto)
+	if err != nil {
+		if errors.Is(err, errs.ErrInvalidCredentials) {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to login customer, error: %v", err)
+	}
+	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
+
 func (h *ssoHandler) LoginWaiter(ctx context.Context, req *pb.LoginEmployeeRequest) (*pb.LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LoginWaiter not implemented")
+	dto := &dto.LoginEmployeeDTO{
+		Login:    req.Login,
+		Password: req.Password,
+	}
+	if err := h.validate.Struct(dto); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
+	}
+	tokens, err := h.auth.LoginWaiter(ctx, dto)
+	if err != nil {
+		if errors.Is(err, errs.ErrInvalidCredentials) {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to login waiter, error: %v", err)
+	}
+	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
+
 func (h *ssoHandler) LoginAdmin(ctx context.Context, req *pb.LoginEmployeeRequest) (*pb.LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LoginAdmin not implemented")
+	dto := &dto.LoginEmployeeDTO{
+		Login:    req.Login,
+		Password: req.Password,
+	}
+	if err := h.validate.Struct(dto); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
+	}
+	tokens, err := h.auth.LoginAdmin(ctx, dto)
+	if err != nil {
+		if errors.Is(err, errs.ErrInvalidCredentials) {
+			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to login admin, error: %v", err)
+	}
+	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
+
 func (h *ssoHandler) Refresh(ctx context.Context, req *pb.RefreshRequest) (*pb.RefreshResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
+	token, err := h.auth.Refresh(ctx, req.RefreshToken)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid refresh token")
+	}
+	return &pb.RefreshResponse{AccessToken: token}, nil
 }
+
 func (h *ssoHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+	if err := h.auth.Logout(ctx, req.RefreshToken); err != nil {
+		return &pb.LogoutResponse{Status: "error"}, nil
+	}
+	return &pb.LogoutResponse{Status: "OK"}, nil
 }

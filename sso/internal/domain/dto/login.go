@@ -9,3 +9,8 @@ type LoginEmployeeDTO struct {
 	Login    string `validate:"required"`
 	Password string `validate:"required"`
 }
+
+type TokensDTO struct {
+	AccessToken  string
+	RefreshToken string
+}

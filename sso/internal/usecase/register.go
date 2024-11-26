@@ -10,15 +10,36 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type CustomerRegisterRepo interface {
+	CheckEmailExists(ctx context.Context, email string) (bool, error)
+	CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (uuid.UUID, error)
+}
+
+type AdminRegisterRepo interface {
+	CheckLoginExists(ctx context.Context, login string) (bool, error)
+	CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (uuid.UUID, error)
+}
+
+type WaiterRegisterRepo interface {
+	CheckLoginExists(ctx context.Context, login string) (bool, error)
+	CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (uuid.UUID, error)
+}
+
 type registerUsecase struct {
-	customers CustomerRepo
-	admins    AdminRepo
-	waiters   WaiterRepo
+	customers CustomerRegisterRepo
+	admins    AdminRegisterRepo
+	waiters   WaiterRegisterRepo
 	log       *slog.Logger
 	secretKey string
 }
 
-func NewRegisterUsecase(log *slog.Logger, customers CustomerRepo, waiters WaiterRepo, admins AdminRepo, secretKey string) *registerUsecase {
+func NewRegisterUsecase(
+	log *slog.Logger,
+	customers CustomerRegisterRepo,
+	waiters WaiterRegisterRepo,
+	admins AdminRegisterRepo,
+	secretKey string,
+) *registerUsecase {
 	return &registerUsecase{
 		customers: customers,
 		admins:    admins,
