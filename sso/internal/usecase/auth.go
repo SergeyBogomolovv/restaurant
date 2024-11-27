@@ -162,10 +162,8 @@ func (u *authUsecase) Refresh(ctx context.Context, token string) (string, error)
 	const op = "auth.Refresh"
 	log := u.log.With(slog.String("op", op))
 
-	log.Info("refreshing access token")
 	payload, err := u.tokens.VerifyRefreshToken(ctx, token)
 	if err != nil {
-		log.Info("refresh token invalid", "error", err)
 		return "", errs.ErrInvalidJwtToken
 	}
 
@@ -181,8 +179,6 @@ func (u *authUsecase) Refresh(ctx context.Context, token string) (string, error)
 func (u *authUsecase) Logout(ctx context.Context, token string) error {
 	const op = "auth.Logout"
 	log := u.log.With(slog.String("op", op))
-
-	log.Info("logging out")
 
 	if err := u.tokens.RevokeRefreshToken(ctx, token); err != nil {
 		if errors.Is(err, errs.ErrInvalidJwtToken) {
