@@ -87,7 +87,7 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, payload *dto.Reg
 	return id, nil
 }
 
-func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.RegisterWaiterDTO, token string) (uuid.UUID, error) {
+func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.RegisterWaiterDTO) (uuid.UUID, error) {
 	const op = "register.Waiter"
 	log := u.log.With(slog.String("op", op), slog.String("login", payload.Login))
 
@@ -129,7 +129,7 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.Regis
 	return id, nil
 }
 
-func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.RegisterAdminDTO, token string) (uuid.UUID, error) {
+func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.RegisterAdminDTO) (uuid.UUID, error) {
 	const op = "register.Admin"
 	log := u.log.With(slog.String("op", op), slog.String("login", payload.Login))
 

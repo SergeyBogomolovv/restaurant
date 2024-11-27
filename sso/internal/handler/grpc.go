@@ -25,8 +25,8 @@ type AuthUsecase interface {
 
 type RegisterUsecase interface {
 	RegisterCustomer(ctx context.Context, dto *dto.RegisterCustomerDTO) (uuid.UUID, error)
-	RegisterWaiter(ctx context.Context, dto *dto.RegisterWaiterDTO, token string) (uuid.UUID, error)
-	RegisterAdmin(ctx context.Context, dto *dto.RegisterAdminDTO, token string) (uuid.UUID, error)
+	RegisterWaiter(ctx context.Context, dto *dto.RegisterWaiterDTO) (uuid.UUID, error)
+	RegisterAdmin(ctx context.Context, dto *dto.RegisterAdminDTO) (uuid.UUID, error)
 }
 
 type ssoHandler struct {
@@ -77,7 +77,7 @@ func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterR
 		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
 	}
 
-	entityID, err := h.register.RegisterWaiter(ctx, dto, req.SecretToken)
+	entityID, err := h.register.RegisterWaiter(ctx, dto)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidSecretToken) {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
@@ -100,7 +100,7 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 	if err := h.validate.Struct(dto); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid payload, error: %v", err)
 	}
-	entityID, err := h.register.RegisterAdmin(ctx, dto, req.SecretToken)
+	entityID, err := h.register.RegisterAdmin(ctx, dto)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidSecretToken) {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
