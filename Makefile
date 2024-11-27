@@ -3,8 +3,12 @@ CONFIG_PATH = ./config/local.yaml
 POSTGRES_URL = postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
 
 .PHONY: run-sso
-run-auth:
+run-sso:
 	@go run sso/cmd/main.go --config=$(CONFIG_PATH)
+
+.PHONY: test-sso
+test-sso:
+	@go test -v ./sso/...
 
 .PHONY: gen-proto
 gen-proto:
