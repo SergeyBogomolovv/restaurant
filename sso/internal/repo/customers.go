@@ -6,6 +6,8 @@ import (
 	"errors"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
+	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -16,6 +18,17 @@ type customerRepo struct {
 
 func NewCustomerRepo(db *sqlx.DB) *customerRepo {
 	return &customerRepo{db: db}
+}
+
+func (r *customerRepo) GetCustomerByEmail(ctx context.Context, email string) (*entities.CustomerEntity, error) {
+	customer := new(entities.CustomerEntity)
+	if err := r.db.GetContext(ctx, customer, "SELECT * FROM customers WHERE email = $1", email); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrCustomerNotFound
+		}
+		return nil, err
+	}
+	return customer, nil
 }
 
 func (r *customerRepo) CheckEmailExists(ctx context.Context, email string) (bool, error) {

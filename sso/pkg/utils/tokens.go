@@ -1,23 +1,9 @@
 package utils
 
 import (
-	"time"
-
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-func SignToken(payload *payload.JwtPayload, secret []byte, ttl time.Duration) (string, error) {
-	iat := time.Now()
-	exp := iat.Add(ttl)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   payload.EntityID,
-		Audience:  jwt.ClaimStrings{payload.Role},
-		IssuedAt:  jwt.NewNumericDate(iat),
-		ExpiresAt: jwt.NewNumericDate(exp),
-	})
-	return token.SignedString(secret)
-}
 
 func VerifyToken(token string, secret []byte) (*payload.JwtPayload, error) {
 	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {

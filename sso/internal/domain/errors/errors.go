@@ -3,6 +3,7 @@ package errs
 import "errors"
 
 var (
+	ErrInvalidJwtToken       = errors.New("invalid jwt token")
 	ErrInvalidSecretToken    = errors.New("invalid secret token")
 	ErrInvalidCredentials    = errors.New("invalid credentials")
 	ErrCustomerNotFound      = errors.New("customer not found")

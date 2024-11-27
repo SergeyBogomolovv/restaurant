@@ -13,26 +13,26 @@ type CustomerEntity struct {
 }
 
 type WaiterEntity struct {
-	WaiterID    string    `db:"waiter_id"`
-	Login       string    `db:"login"`
-	Password    []byte    `db:"password"`
-	FirstName   string    `db:"first_name"`
-	LastName    string    `db:"last_name"`
-	HiredAt     time.Time `db:"hired_at"`
-	FiredAt     time.Time `db:"fired_at"`
-	FiredReason string    `db:"fired_reason"`
-	Rating      float64   `db:"rating"`
+	WaiterID    string     `db:"waiter_id"`
+	Login       string     `db:"login"`
+	Password    []byte     `db:"password"`
+	FirstName   string     `db:"first_name"`
+	LastName    string     `db:"last_name"`
+	HiredAt     time.Time  `db:"hired_at"`
+	FiredAt     *time.Time `db:"fired_at"`
+	FiredReason *string    `db:"fired_reason"`
+	Rating      float64    `db:"rating"`
 }
 
 type AdminEntity struct {
-	AdminID  string `db:"admin_id"`
-	Note     string `db:"note"`
-	Login    string `db:"login"`
-	Password []byte `db:"password"`
+	AdminID  string  `db:"admin_id"`
+	Note     *string `db:"note"`
+	Login    string  `db:"login"`
+	Password []byte  `db:"password"`
 }
 
 type RefreshTokenEntity struct {
-	UserID    string    `json:"user_id"`
-	ExpiresAt time.Time `json:"expires_at"`
+	EntityID  string    `json:"entity_id"`
 	Role      string    `json:"role"`
+	ExpiresAt time.Time `json:"expires_at"`
 }

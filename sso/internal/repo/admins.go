@@ -6,6 +6,8 @@ import (
 	"errors"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
+	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -16,6 +18,17 @@ type adminRepo struct {
 
 func NewAdminRepo(db *sqlx.DB) *adminRepo {
 	return &adminRepo{db: db}
+}
+
+func (r *adminRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.AdminEntity, error) {
+	admin := new(entities.AdminEntity)
+	if err := r.db.GetContext(ctx, admin, "SELECT * FROM admins WHERE login = $1", login); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.ErrAdminNotFound
+		}
+		return nil, err
+	}
+	return admin, nil
 }
 
 func (r *adminRepo) CheckLoginExists(ctx context.Context, login string) (bool, error) {

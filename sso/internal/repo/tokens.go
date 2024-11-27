@@ -10,6 +10,7 @@ import (
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
+	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -31,14 +32,13 @@ func NewTokensRepo(db *redis.Client, jwtConfig config.JwtConfig) *tokensRepo {
 	}
 }
 
-func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, role string) (string, error) {
+func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, entityID string, role string) (string, error) {
 	tokenID := uuid.NewString()
 	iat := time.Now()
 	exp := iat.Add(r.refreshTTL)
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   tokenID,
-		Audience:  jwt.ClaimStrings{role},
 		IssuedAt:  jwt.NewNumericDate(iat),
 		ExpiresAt: jwt.NewNumericDate(exp),
 	}).SignedString(r.jwtSecret)
@@ -47,7 +47,7 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, ro
 	}
 
 	payload, err := json.Marshal(&entities.RefreshTokenEntity{
-		UserID:    userID,
+		EntityID:  entityID,
 		ExpiresAt: exp,
 		Role:      role,
 	})
@@ -61,44 +61,56 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, userID string, ro
 	return token, nil
 }
 
-func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (string, error) {
-	token, err := verifyToken(token, r.jwtSecret)
+func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (*payload.JwtPayload, error) {
+	tokenID, err := r.verifyRefreshTokenID(token)
 	if err != nil {
-		return "", errs.ErrInvalidCredentials
+		return nil, errs.ErrInvalidJwtToken
 	}
 
-	res, err := r.db.Get(ctx, tokenKey(token)).Bytes()
+	res, err := r.db.Get(ctx, tokenKey(tokenID)).Bytes()
 	if err != nil {
-		return "", errs.ErrInvalidCredentials
+		return nil, errs.ErrInvalidJwtToken
 	}
 
-	var payload entities.RefreshTokenEntity
-	if err := json.Unmarshal(res, &payload); err != nil {
-		return "", err
+	var refreshToken entities.RefreshTokenEntity
+	if err := json.Unmarshal(res, &refreshToken); err != nil {
+		return nil, err
 	}
 
-	if payload.ExpiresAt.Before(time.Now()) {
-		return "", errs.ErrInvalidCredentials
+	if refreshToken.ExpiresAt.Before(time.Now()) {
+		return nil, errs.ErrInvalidJwtToken
 	}
-	return payload.UserID, nil
+	return &payload.JwtPayload{EntityID: refreshToken.EntityID, Role: refreshToken.Role}, nil
 }
 
 func (r *tokensRepo) RevokeRefreshToken(ctx context.Context, token string) error {
-	token, err := verifyToken(token, r.jwtSecret)
+	tokenID, err := r.verifyRefreshTokenID(token)
 	if err != nil {
-		return errs.ErrInvalidCredentials
+		return errs.ErrInvalidJwtToken
 	}
-	return r.db.Del(ctx, tokenKey(token)).Err()
+	return r.db.Del(ctx, tokenKey(tokenID)).Err()
 }
 
-func verifyToken(token string, secret []byte) (string, error) {
-	parsed, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		return secret, nil
+func (r *tokensRepo) verifyRefreshTokenID(jwtToken string) (string, error) {
+	parsed, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		return r.jwtSecret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", errs.ErrInvalidCredentials
+		return "", errs.ErrInvalidJwtToken
 	}
 	return parsed.Claims.GetSubject()
+}
+
+func (r *tokensRepo) SignAccessToken(entityID string, role string) (string, error) {
+	iat := time.Now()
+	exp := iat.Add(r.accessTTL)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Subject:   entityID,
+		Audience:  jwt.ClaimStrings{role},
+		IssuedAt:  jwt.NewNumericDate(iat),
+		ExpiresAt: jwt.NewNumericDate(exp),
+	})
+	return token.SignedString(r.jwtSecret)
 }
 
 func tokenKey(tokenID string) string {
