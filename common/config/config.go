@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Env         string    `yaml:"env" env-required:"true"`
-	PostgresURL string    `yaml:"postgres_url" env-required:"true"`
-	RedisURL    string    `yaml:"redis_url" env-required:"true"`
-	SSO         Service   `yaml:"sso" env-required:"true"`
-	Jwt         JwtConfig `yaml:"jwt" env-required:"true"`
+	Env         string     `yaml:"env" env-required:"true"`
+	PostgresURL string     `yaml:"postgres_url" env-required:"true"`
+	RedisURL    string     `yaml:"redis_url" env-required:"true"`
+	SSO         SSOService `yaml:"sso" env-required:"true"`
+	Jwt         JwtConfig  `yaml:"jwt" env-required:"true"`
 }
 
 type JwtConfig struct {
@@ -22,9 +22,10 @@ type JwtConfig struct {
 	AccessTTL  time.Duration `yaml:"access_ttl" env-required:"true"`
 }
 
-type Service struct {
-	Port    int           `yaml:"port" env-required:"true"`
-	Timeout time.Duration `yaml:"timeout" env-required:"true"`
+type SSOService struct {
+	Port      int           `yaml:"port" env-required:"true"`
+	Timeout   time.Duration `yaml:"timeout" env-required:"true"`
+	SecretKey string        `yaml:"secret_key" env-required:"true"`
 }
 
 func MustLoad() *Config {

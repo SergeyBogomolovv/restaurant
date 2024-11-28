@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS customers 
+(
+  customer_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  birth_date DATE NOT NULL,
+  total_spent DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password BYTEA NOT NULL,
+  registered_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS waiters 
+(
+  waiter_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  first_name VARCHAR(255) NOT NULL,
+  last_name VARCHAR(255) NOT NULL,
+  login VARCHAR(255) UNIQUE NOT NULL,
+  password BYTEA NOT NULL,
+  hired_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fired_at TIMESTAMP WITH TIME ZONE,
+  fired_reason TEXT,
+  rating DECIMAL(1, 2) NOT NULL DEFAULT 0,
+  CONSTRAINT check_rating CHECK (rating >= 0 AND rating <= 5)
+);
+
+CREATE TABLE IF NOT EXISTS admins 
+(
+  admin_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  note TEXT,
+  login VARCHAR(255) UNIQUE NOT NULL,
+  password BYTEA NOT NULL
+);
