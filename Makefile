@@ -2,6 +2,14 @@ MIGRATIONS_PATH = common/db/migrations
 CONFIG_PATH = ./config/local.yaml
 POSTGRES_URL = postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
 
+.PHONY: run-reservation
+run-reservation:
+	@go run reservation/cmd/main.go --config=$(CONFIG_PATH)
+
+.PHONY: test-reservation
+test-reservation:
+	@go test -v ./reservation/...
+
 .PHONY: run-sso
 run-sso:
 	@go run sso/cmd/main.go --config=$(CONFIG_PATH)
