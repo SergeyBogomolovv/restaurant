@@ -9,8 +9,7 @@ import (
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
 	"github.com/SergeyBogomolovv/restaurant/common/db"
-	"github.com/SergeyBogomolovv/restaurant/common/redis"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/app"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/app"
 )
 
 const (
@@ -22,8 +21,6 @@ const (
 func main() {
 	cfg := config.MustLoad()
 	db := db.MustConnect(cfg.PostgresURL)
-	redis := redis.MustConnect(cfg.RedisURL)
-	defer redis.Close()
 	defer db.Close()
 
 	logger := setupLogger(cfg.Env)
@@ -31,8 +28,8 @@ func main() {
 
 	logger.Info("starting application")
 
-	app := app.New(logger, db, redis, cfg.Jwt, cfg.SSO.SecretKey)
-	go app.Run(cfg.SSO.Port)
+	app := app.New(logger, db)
+	go app.Run(cfg.Reservation.Port)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()

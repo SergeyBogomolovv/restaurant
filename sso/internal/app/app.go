@@ -35,7 +35,7 @@ func New(log *slog.Logger, db *sqlx.DB, rdb *redis.Client, jwtConfig config.JwtC
 }
 
 func (a *App) Run(port int) {
-	const op = "auth.Run"
+	const op = "sso.Run"
 	log := a.log.With(slog.String("op", op))
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
@@ -51,7 +51,7 @@ func (a *App) Run(port int) {
 }
 
 func (a *App) Shutdown() {
-	const op = "auth.Shutdown"
+	const op = "sso.Shutdown"
 	a.log.With(slog.String("op", op)).Info("stopping gRPC server")
 	a.server.GracefulStop()
 }
