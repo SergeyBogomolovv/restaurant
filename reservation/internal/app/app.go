@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/handler"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/repo"
@@ -25,7 +26,7 @@ func New(log *slog.Logger, db *sqlx.DB) *App {
 	repo := repo.NewReservationRepo(db)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	usecase := usecase.NewReservationUsecase(log, repo, ctx)
+	usecase := usecase.NewReservationUsecase(log, repo, ctx, time.Hour)
 
 	handler.RegisterGRPCHandler(server, usecase)
 

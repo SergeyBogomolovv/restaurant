@@ -24,9 +24,9 @@ type reservationUsecase struct {
 	repo Repo
 }
 
-func NewReservationUsecase(log *slog.Logger, repo Repo, ctx context.Context) *reservationUsecase {
+func NewReservationUsecase(log *slog.Logger, repo Repo, ctx context.Context, tickerDuration time.Duration) *reservationUsecase {
 	usecase := &reservationUsecase{log: log, repo: repo}
-	go usecase.CheckEndedReservations(ctx)
+	go usecase.CheckEndedReservations(ctx, tickerDuration)
 	return usecase
 }
 
@@ -57,6 +57,35 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 	}
 
 	return id, nil
+}
+
+func (u *reservationUsecase) CheckEndedReservations(ctx context.Context, duration time.Duration) {
+	const op = "reservation.CheckEndedReservations"
+	log := u.log.With(slog.String("op", op))
+
+	log.Info("reservations checker started")
+
+	for {
+		now := time.Now()
+		next := now.Truncate(duration).Add(duration)
+		waitDuration := time.Until(next)
+
+		timer := time.NewTimer(waitDuration)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			log.Info("check closed reservations stopped")
+			return
+		case <-timer.C:
+			count, err := u.repo.CloseEndedReservations(ctx)
+			if err != nil {
+				log.Error("failed to check closed reservations", "error", err)
+			}
+			if count > 0 {
+				log.Info("closed reservations", "count", count)
+			}
+		}
+	}
 }
 
 func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationId uuid.UUID) error {
@@ -97,33 +126,4 @@ func (u *reservationUsecase) CloseReservation(ctx context.Context, reservationId
 	// TODO: send rmq
 
 	return nil
-}
-
-func (u *reservationUsecase) CheckEndedReservations(ctx context.Context) {
-	const op = "reservation.CheckEndedReservations"
-	log := u.log.With(slog.String("op", op))
-
-	log.Info("reservations checker started")
-
-	for {
-		now := time.Now()
-		nextHour := now.Truncate(time.Hour).Add(time.Hour)
-		waitDuration := time.Until(nextHour)
-
-		timer := time.NewTimer(waitDuration)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			log.Info("check closed reservations stopped")
-			return
-		case <-timer.C:
-			count, err := u.repo.CloseEndedReservations(ctx)
-			if err != nil {
-				log.Error("failed to check closed reservations", "error", err)
-			}
-			if count > 0 {
-				log.Info("closed reservations", "count", count)
-			}
-		}
-	}
 }
