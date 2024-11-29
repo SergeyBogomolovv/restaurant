@@ -1,24 +1,35 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net"
 
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/handler"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/repo"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/usecase"
 	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc"
 )
 
 type App struct {
-	server *grpc.Server
-	log    *slog.Logger
+	server     *grpc.Server
+	log        *slog.Logger
+	stopTicker context.CancelFunc
 }
 
 func New(log *slog.Logger, db *sqlx.DB) *App {
-	//TODO: add deps
 	server := grpc.NewServer()
 
-	return &App{server: server, log: log}
+	repo := repo.NewReservationRepo(db)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	usecase := usecase.NewReservationUsecase(log, repo, ctx)
+
+	handler.RegisterGRPCHandler(server, usecase)
+
+	return &App{server: server, log: log, stopTicker: cancel}
 }
 
 func (a *App) Run(port int) {
@@ -41,4 +52,5 @@ func (a *App) Shutdown() {
 	const op = "reservation.Shutdown"
 	a.log.With(slog.String("op", op)).Info("stopping gRPC server")
 	a.server.GracefulStop()
+	a.stopTicker()
 }
