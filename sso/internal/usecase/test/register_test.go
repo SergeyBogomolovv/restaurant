@@ -13,48 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockCustomerRegisterRepo struct {
-	mock.Mock
-}
-
-func (m *mockCustomerRegisterRepo) CheckEmailExists(ctx context.Context, email string) (bool, error) {
-	args := m.Called(ctx, email)
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (uuid.UUID, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
-}
-
-type mockAdminRegisterRepo struct {
-	mock.Mock
-}
-
-func (m *mockAdminRegisterRepo) CheckLoginExists(ctx context.Context, login string) (bool, error) {
-	args := m.Called(ctx, login)
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (uuid.UUID, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
-}
-
-type mockWaiterRegisterRepo struct {
-	mock.Mock
-}
-
-func (m *mockWaiterRegisterRepo) CheckLoginExists(ctx context.Context, login string) (bool, error) {
-	args := m.Called(ctx, login)
-	return args.Bool(0), args.Error(1)
-}
-
-func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (uuid.UUID, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
-}
-
 func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 	ctx := context.Background()
 	log := NewTestLogger()
