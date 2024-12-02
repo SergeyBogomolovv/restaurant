@@ -12,3 +12,6 @@ jwt:
   secret: 'my-secret-key'
   refresh_ttl: 15h
   access_ttl: 1h
+payments:
+  port: 10117
+  timeout: 10h

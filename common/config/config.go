@@ -14,6 +14,7 @@ type Config struct {
 	RedisURL    string              `yaml:"redis_url" env-required:"true"`
 	SSO         SSOService          `yaml:"sso" env-required:"true"`
 	Reservation ReseravationService `yaml:"reservation" env-required:"true"`
+	Payments    PaymentsService     `yaml:"payments" env-required:"true"`
 	Jwt         JwtConfig           `yaml:"jwt" env-required:"true"`
 }
 
@@ -30,6 +31,11 @@ type SSOService struct {
 }
 
 type ReseravationService struct {
+	Port    int           `yaml:"port" env-required:"true"`
+	Timeout time.Duration `yaml:"timeout" env-required:"true"`
+}
+
+type PaymentsService struct {
 	Port    int           `yaml:"port" env-required:"true"`
 	Timeout time.Duration `yaml:"timeout" env-required:"true"`
 }
