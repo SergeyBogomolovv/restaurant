@@ -57,10 +57,12 @@ func (h *ssoHandler) RegisterCustomer(ctx context.Context, req *pb.RegisterCusto
 	}
 	entityID, err := h.register.RegisterCustomer(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrCustomerAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "Customer with this email already exists")
+		switch {
+		case errors.Is(err, errs.ErrCustomerAlreadyExists):
+			return nil, status.Error(codes.AlreadyExists, "Customer with this email already exists")
+		default:
+			return nil, status.Error(codes.Internal, "failed to register customer")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to register customer, error: %v", err)
 	}
 	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
@@ -79,13 +81,14 @@ func (h *ssoHandler) RegisterWaiter(ctx context.Context, req *pb.RegisterWaiterR
 
 	entityID, err := h.register.RegisterWaiter(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidSecretToken) {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
+		switch {
+		case errors.Is(err, errs.ErrInvalidSecretToken):
+			return nil, status.Error(codes.Unauthenticated, "invalid secret token")
+		case errors.Is(err, errs.ErrWaiterAlreadyExists):
+			return nil, status.Error(codes.AlreadyExists, "Waiter with this login already exists")
+		default:
+			return nil, status.Error(codes.Internal, "failed to register waiter")
 		}
-		if errors.Is(err, errs.ErrWaiterAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "Waiter with this login already exists")
-		}
-		return nil, status.Errorf(codes.Internal, "failed to register waiter, error: %v", err)
 	}
 	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
@@ -102,13 +105,14 @@ func (h *ssoHandler) RegisterAdmin(ctx context.Context, req *pb.RegisterAdminReq
 	}
 	entityID, err := h.register.RegisterAdmin(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidSecretToken) {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid secret token")
+		switch {
+		case errors.Is(err, errs.ErrInvalidSecretToken):
+			return nil, status.Error(codes.Unauthenticated, "invalid secret token")
+		case errors.Is(err, errs.ErrAdminAlreadyExists):
+			return nil, status.Error(codes.AlreadyExists, "Admin with this login already exists")
+		default:
+			return nil, status.Error(codes.Internal, "failed to register admin")
 		}
-		if errors.Is(err, errs.ErrAdminAlreadyExists) {
-			return nil, status.Errorf(codes.AlreadyExists, "Admin with this login already exists")
-		}
-		return nil, status.Errorf(codes.Internal, "failed to register admin, error: %v", err)
 	}
 	return &pb.RegisterResponse{EntityId: entityID.String()}, nil
 }
@@ -123,10 +127,12 @@ func (h *ssoHandler) LoginCustomer(ctx context.Context, req *pb.LoginCustomerReq
 	}
 	tokens, err := h.auth.LoginCustomer(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidCredentials) {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		switch {
+		case errors.Is(err, errs.ErrInvalidCredentials):
+			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+		default:
+			return nil, status.Error(codes.Internal, "failed to login customer")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to login customer, error: %v", err)
 	}
 	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
@@ -141,10 +147,12 @@ func (h *ssoHandler) LoginWaiter(ctx context.Context, req *pb.LoginEmployeeReque
 	}
 	tokens, err := h.auth.LoginWaiter(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidCredentials) {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		switch {
+		case errors.Is(err, errs.ErrInvalidCredentials):
+			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+		default:
+			return nil, status.Error(codes.Internal, "failed to login waiter")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to login waiter, error: %v", err)
 	}
 	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
@@ -159,10 +167,12 @@ func (h *ssoHandler) LoginAdmin(ctx context.Context, req *pb.LoginEmployeeReques
 	}
 	tokens, err := h.auth.LoginAdmin(ctx, dto)
 	if err != nil {
-		if errors.Is(err, errs.ErrInvalidCredentials) {
-			return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
+		switch {
+		case errors.Is(err, errs.ErrInvalidCredentials):
+			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+		default:
+			return nil, status.Error(codes.Internal, "failed to login admin")
 		}
-		return nil, status.Errorf(codes.Internal, "failed to login admin, error: %v", err)
 	}
 	return &pb.LoginResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken}, nil
 }
@@ -170,7 +180,13 @@ func (h *ssoHandler) LoginAdmin(ctx context.Context, req *pb.LoginEmployeeReques
 func (h *ssoHandler) Refresh(ctx context.Context, req *pb.RefreshRequest) (*pb.RefreshResponse, error) {
 	token, err := h.auth.Refresh(ctx, req.RefreshToken)
 	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, "invalid refresh token")
+		switch {
+		case errors.Is(err, errs.ErrInvalidJwtToken):
+			return nil, status.Error(codes.Unauthenticated, "invalid refreshToken")
+		default:
+			return nil, status.Error(codes.Internal, "failed to refresh token")
+		}
+
 	}
 	return &pb.RefreshResponse{AccessToken: token}, nil
 }
