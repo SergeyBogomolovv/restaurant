@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package reservation;
+
+option go_package = "/reservation/pb";
+
+service Reservation {
+  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse);
+  rpc CancelReservation(CancelReservationRequest) returns (CancelReservationResponse);
+  rpc CloseReservation(CloseReservationRequest) returns (CloseReservationResponse);
+}
+
+message CreateReservationRequest {
+  string customer_id = 1;
+  string table_id = 4;
+  int64 start_time = 2;
+  int64 end_time = 3;
+}
+
+message CreateReservationResponse {
+  string reservation_id = 1;
+}
+
+message CancelReservationRequest {
+  string reservation_id = 1;
+}
+
+message CancelReservationResponse {
+  string status = 1;
+}
+
+message CloseReservationRequest {
+  string reservation_id = 1;
+}
+
+message CloseReservationResponse {
+  string status = 1;
+}

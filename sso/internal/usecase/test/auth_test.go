@@ -2,8 +2,6 @@ package usecase_test
 
 import (
 	"context"
-	"io"
-	"log/slog"
 	"testing"
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
@@ -13,75 +11,8 @@ import (
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/usecase"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
 )
-
-func NewTestLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(io.Discard, nil))
-}
-
-type mockCustomerAuthRepo struct {
-	mock.Mock
-}
-
-func (m *mockCustomerAuthRepo) GetCustomerByEmail(ctx context.Context, email string) (*entities.CustomerEntity, error) {
-	args := m.Called(ctx, email)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entities.CustomerEntity), args.Error(1)
-}
-
-type mockAdminAuthRepo struct {
-	mock.Mock
-}
-
-func (m *mockAdminAuthRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.AdminEntity, error) {
-	args := m.Called(ctx, login)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entities.AdminEntity), args.Error(1)
-}
-
-type mockWaiterAuthRepo struct {
-	mock.Mock
-}
-
-func (m *mockWaiterAuthRepo) GetWaiterByLogin(ctx context.Context, login string) (*entities.WaiterEntity, error) {
-	args := m.Called(ctx, login)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entities.WaiterEntity), args.Error(1)
-}
-
-type mockTokensRepo struct {
-	mock.Mock
-}
-
-func (m *mockTokensRepo) GenerateRefreshToken(ctx context.Context, entityID string, role string) (string, error) {
-	args := m.Called(ctx, entityID, role)
-	return args.String(0), args.Error(1)
-}
-
-func (m *mockTokensRepo) VerifyRefreshToken(ctx context.Context, token string) (*payload.JwtPayload, error) {
-	args := m.Called(ctx, token)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*payload.JwtPayload), args.Error(1)
-}
-
-func (m *mockTokensRepo) RevokeRefreshToken(ctx context.Context, token string) error {
-	return m.Called(ctx, token).Error(0)
-}
-
-func (m *mockTokensRepo) SignAccessToken(entityID string, role string) (string, error) {
-	args := m.Called(entityID, role)
-	return args.String(0), args.Error(1)
-}
 
 func TestAuthUsecase_LoginCustomer(t *testing.T) {
 	ctx := context.Background()
