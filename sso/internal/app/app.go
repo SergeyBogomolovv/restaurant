@@ -52,6 +52,7 @@ func (a *App) Run(port int) {
 
 func (a *App) Shutdown() {
 	const op = "sso.Shutdown"
-	a.log.With(slog.String("op", op)).Info("stopping gRPC server")
+	log := a.log.With(slog.String("op", op))
 	a.server.GracefulStop()
+	log.Info("gRPC server stopped")
 }

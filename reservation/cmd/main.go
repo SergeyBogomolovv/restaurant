@@ -26,8 +26,6 @@ func main() {
 	logger := setupLogger(cfg.Env)
 	logger = logger.With(slog.String("env", cfg.Env))
 
-	logger.Info("starting application")
-
 	app := app.New(logger, db)
 	go app.Run(cfg.Reservation.Port)
 
@@ -36,7 +34,6 @@ func main() {
 
 	<-ctx.Done()
 	app.Shutdown()
-	logger.Info("application stopped")
 }
 
 func setupLogger(env string) (logger *slog.Logger) {

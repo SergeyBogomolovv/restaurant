@@ -51,7 +51,8 @@ func (a *App) Run(port int) {
 
 func (a *App) Shutdown() {
 	const op = "reservation.Shutdown"
-	a.log.With(slog.String("op", op)).Info("stopping gRPC server")
+	log := a.log.With(slog.String("op", op))
 	a.server.GracefulStop()
 	a.stopTicker()
+	log.Info("gRPC server stopped")
 }
