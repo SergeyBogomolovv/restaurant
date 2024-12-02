@@ -94,6 +94,8 @@ func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationI
 
 	log.Info("cancelling reservation")
 
+	//TODO: check is admin or current user
+
 	if err := u.repo.SetReservationStatus(ctx, reservationId, constants.ReservationStatusCancelled); err != nil {
 		if errors.Is(err, errs.ErrReservationNotFound) {
 			log.Info("reservation not found")
@@ -113,6 +115,8 @@ func (u *reservationUsecase) CloseReservation(ctx context.Context, reservationId
 	log := u.log.With(slog.String("op", op))
 
 	log.Info("closing reservation")
+
+	//TODO: check is admin or waiter
 
 	if err := u.repo.SetReservationStatus(ctx, reservationId, constants.ReservationStatusClosed); err != nil {
 		if errors.Is(err, errs.ErrReservationNotFound) {
