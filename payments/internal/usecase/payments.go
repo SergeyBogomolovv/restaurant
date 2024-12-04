@@ -24,7 +24,7 @@ func (u *paymentsUsecase) Run() {
 	log := u.log.With(slog.String("op", op))
 	log.Info("starting payments usecase")
 
-	if err := u.broker.Consume("payments_reservation_queue", func(message amqp.Delivery) {
+	if err := u.broker.Consume("payments.reservation_queue", func(message amqp.Delivery) {
 		log.Info("message received", "message", message.RoutingKey)
 	}); err != nil {
 		log.Error("failed to consume", "error", err)

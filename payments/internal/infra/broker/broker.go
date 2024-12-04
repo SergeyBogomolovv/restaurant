@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -60,12 +61,12 @@ func (b *RabbitMQBroker) Setup() error {
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare("payments_reservation_queue", true, false, false, false, nil)
+	q, err := ch.QueueDeclare("payments.reservation_queue", true, false, false, false, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := ch.QueueBind(q.Name, "reservation.*", "reservation_exchange", false, nil); err != nil {
+	if err := ch.QueueBind(q.Name, "reservation.*", constants.ReservationExchange, false, nil); err != nil {
 		return err
 	}
 	return nil

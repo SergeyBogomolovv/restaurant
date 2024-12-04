@@ -21,7 +21,7 @@ type Repo interface {
 }
 
 type Broker interface {
-	Publish(exchange, routingKey string, body []byte) error
+	Publish(key string, body []byte) error
 }
 
 type reservationUsecase struct {
@@ -95,7 +95,7 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 		log.Error("failed to marshal payload", "error", err)
 		return uuid.Nil, err
 	}
-	u.broker.Publish("reservation_exchange", "reservation.create", payload)
+	u.broker.Publish("reservation.create", payload)
 
 	return id, nil
 }
@@ -122,7 +122,7 @@ func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationI
 		log.Error("failed to marshal payload", "error", err)
 		return err
 	}
-	u.broker.Publish("reservation_exchange", "reservation.cancelled", payload)
+	u.broker.Publish("reservation.cancelled", payload)
 
 	return nil
 }
@@ -149,7 +149,7 @@ func (u *reservationUsecase) CloseReservation(ctx context.Context, reservationId
 		log.Error("failed to marshal payload", "error", err)
 		return err
 	}
-	u.broker.Publish("reservation_exchange", "reservation.closed", payload)
+	u.broker.Publish("reservation.closed", payload)
 
 	return nil
 }

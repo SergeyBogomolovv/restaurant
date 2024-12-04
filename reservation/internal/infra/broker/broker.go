@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -12,14 +13,14 @@ func NewRabbitMQBroker(conn *amqp.Connection) *RabbitMQBroker {
 	return &RabbitMQBroker{conn: conn}
 }
 
-func (b *RabbitMQBroker) Publish(exchange, routingKey string, body []byte) error {
+func (b *RabbitMQBroker) Publish(routingKey string, body []byte) error {
 	ch, err := b.conn.Channel()
 	if err != nil {
 		return err
 	}
 	defer ch.Close()
 
-	return ch.Publish(exchange, routingKey, false, false, amqp.Publishing{
+	return ch.Publish(constants.ReservationExchange, routingKey, false, false, amqp.Publishing{
 		ContentType:  "application/json",
 		DeliveryMode: amqp.Persistent,
 		Body:         body,
@@ -33,7 +34,7 @@ func (b *RabbitMQBroker) Setup() error {
 	}
 	defer ch.Close()
 
-	if err := ch.ExchangeDeclare("reservation_exchange", "topic", true, false, false, false, nil); err != nil {
+	if err := ch.ExchangeDeclare(constants.ReservationExchange, "topic", true, false, false, false, nil); err != nil {
 		return err
 	}
 

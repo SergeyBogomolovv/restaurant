@@ -18,8 +18,11 @@ func TestReservationUsecase_CreateReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
+	mockBroker := new(mockBroker)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
+	//TODO: update
+	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("success", func(t *testing.T) {
 		tableId := uuid.New()
@@ -29,10 +32,10 @@ func TestReservationUsecase_CreateReservation(t *testing.T) {
 			StartTime:  time.Unix(1730455200, 0),
 			EndTime:    time.Unix(1730458800, 0),
 		}
+
 		mockRepo.On("GetTableExists", ctx, tableId).Return(true, nil)
 		resultId := uuid.New()
 		mockRepo.On("CreateReservation", ctx, dto).Return(resultId, nil)
-
 		reservationID, err := usecase.CreateReservation(ctx, dto)
 
 		assert.NoError(t, err)
@@ -78,8 +81,11 @@ func TestReservationUsecase_CancelReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
+	mockBroker := new(mockBroker)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
+	//TODO: update
+	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("succes", func(t *testing.T) {
 		id := uuid.New()
@@ -104,8 +110,11 @@ func TestReservationUsecase_CloseReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
+	mockBroker := new(mockBroker)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
+	//TODO: update
+	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("success", func(t *testing.T) {
 		id := uuid.New()
@@ -127,12 +136,16 @@ func TestReservationUsecase_CheckEndedReservations(t *testing.T) {
 	defer cancel()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
+	mockBroker := new(mockBroker)
+
+	//TODO: update
+	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
 	tickerDuration := 50 * time.Millisecond
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	mockRepo.On("CloseEndedReservations", mock.Anything).Return(int64(2), nil)
 
-	usecase.RunEndedReservationsChecker(ctx, tickerDuration)
+	go usecase.RunEndedReservationsChecker(ctx, tickerDuration)
 
 	done := make(chan struct{})
 	go func() {

@@ -37,3 +37,12 @@ func (m *mockReservationRepo) GetTableExists(ctx context.Context, tableID uuid.U
 	args := m.Called(ctx, tableID)
 	return args.Get(0).(bool), args.Error(1)
 }
+
+type mockBroker struct {
+	mock.Mock
+}
+
+func (m *mockBroker) Publish(key string, data []byte) error {
+	args := m.Called(key, data)
+	return args.Error(0)
+}
