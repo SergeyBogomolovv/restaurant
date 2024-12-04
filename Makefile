@@ -2,6 +2,10 @@ MIGRATIONS_PATH = common/db/migrations
 CONFIG_PATH = ./config/local.yaml
 POSTGRES_URL = postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
 
+.PHONY: run-payments
+run-payments:
+	@go run payments/cmd/main.go --config=$(CONFIG_PATH)
+
 .PHONY: run-reservation
 run-reservation:
 	@go run reservation/cmd/main.go --config=$(CONFIG_PATH)

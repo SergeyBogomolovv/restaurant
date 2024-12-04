@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/handler"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/infra/broker"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/repo"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/usecase"
 	"github.com/jmoiron/sqlx"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 )
 
@@ -20,13 +22,19 @@ type App struct {
 	stopTicker context.CancelFunc
 }
 
-func New(log *slog.Logger, db *sqlx.DB) *App {
+func New(log *slog.Logger, db *sqlx.DB, amqpConn *amqp.Connection) *App {
 	server := grpc.NewServer()
 
 	repo := repo.NewReservationRepo(db)
 
+	broker := broker.NewRabbitMQBroker(amqpConn)
+	if err := broker.Setup(); err != nil {
+		panic(err)
+	}
+
+	usecase := usecase.NewReservationUsecase(log, repo, broker)
 	ctx, cancel := context.WithCancel(context.Background())
-	usecase := usecase.NewReservationUsecase(log, repo, ctx, time.Hour)
+	go usecase.RunEndedReservationsChecker(ctx, time.Hour)
 
 	handler.RegisterGRPCHandler(server, usecase)
 

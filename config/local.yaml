@@ -1,6 +1,7 @@
 env: 'local'
 postgres_url: 'postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable'
 redis_url: 'redis://localhost:6379/0'
+amqp_url: 'amqp://guest:guest@localhost:5672'
 reservation:
   port: 10120
   timeout: 10h

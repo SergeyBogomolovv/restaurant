@@ -5,6 +5,9 @@ import (
 	"log/slog"
 	"net"
 
+	"github.com/SergeyBogomolovv/restaurant/payments/internal/infra/broker"
+	"github.com/SergeyBogomolovv/restaurant/payments/internal/usecase"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc"
 )
 
@@ -13,8 +16,17 @@ type application struct {
 	server *grpc.Server
 }
 
-func New(log *slog.Logger) *application {
+func New(log *slog.Logger, amqpConn *amqp.Connection) *application {
 	server := grpc.NewServer()
+
+	broker := broker.NewRabbitMQBroker(amqpConn)
+	if err := broker.Setup(); err != nil {
+		panic(err)
+	}
+
+	usecase := usecase.NewPaymentsUsecase(log, broker)
+	go usecase.Run()
+
 	return &application{
 		log:    log,
 		server: server,

@@ -12,6 +12,7 @@ type Config struct {
 	Env         string              `yaml:"env" env-required:"true"`
 	PostgresURL string              `yaml:"postgres_url" env-required:"true"`
 	RedisURL    string              `yaml:"redis_url" env-required:"true"`
+	AmqpURL     string              `yaml:"amqp_url" env-required:"true"`
 	SSO         SSOService          `yaml:"sso" env-required:"true"`
 	Reservation ReseravationService `yaml:"reservation" env-required:"true"`
 	Payments    PaymentsService     `yaml:"payments" env-required:"true"`

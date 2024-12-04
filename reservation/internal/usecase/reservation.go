@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
@@ -19,15 +20,48 @@ type Repo interface {
 	GetTableExists(ctx context.Context, tableID uuid.UUID) (bool, error)
 }
 
-type reservationUsecase struct {
-	log  *slog.Logger
-	repo Repo
+type Broker interface {
+	Publish(exchange, routingKey string, body []byte) error
 }
 
-func NewReservationUsecase(log *slog.Logger, repo Repo, ctx context.Context, tickerDuration time.Duration) *reservationUsecase {
-	usecase := &reservationUsecase{log: log, repo: repo}
-	go usecase.CheckEndedReservations(ctx, tickerDuration)
+type reservationUsecase struct {
+	log    *slog.Logger
+	repo   Repo
+	broker Broker
+}
+
+func NewReservationUsecase(log *slog.Logger, repo Repo, broker Broker) *reservationUsecase {
+	usecase := &reservationUsecase{log: log, repo: repo, broker: broker}
 	return usecase
+}
+
+func (u *reservationUsecase) RunEndedReservationsChecker(ctx context.Context, duration time.Duration) {
+	const op = "reservation.CheckEndedReservations"
+	log := u.log.With(slog.String("op", op))
+
+	log.Info("reservations checker started")
+
+	for {
+		now := time.Now()
+		next := now.Truncate(duration).Add(duration)
+		waitDuration := time.Until(next)
+
+		timer := time.NewTimer(waitDuration)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			log.Info("reservations checker stopped")
+			return
+		case <-timer.C:
+			count, err := u.repo.CloseEndedReservations(ctx)
+			if err != nil {
+				log.Error("failed to check closed reservations", "error", err)
+			}
+			if count > 0 {
+				log.Info("closed reservations", "count", count)
+			}
+		}
+	}
 }
 
 func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (uuid.UUID, error) {
@@ -56,36 +90,14 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 		return uuid.Nil, err
 	}
 
-	return id, nil
-}
-
-func (u *reservationUsecase) CheckEndedReservations(ctx context.Context, duration time.Duration) {
-	const op = "reservation.CheckEndedReservations"
-	log := u.log.With(slog.String("op", op))
-
-	log.Info("reservations checker started")
-
-	for {
-		now := time.Now()
-		next := now.Truncate(duration).Add(duration)
-		waitDuration := time.Until(next)
-
-		timer := time.NewTimer(waitDuration)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			log.Info("check closed reservations stopped")
-			return
-		case <-timer.C:
-			count, err := u.repo.CloseEndedReservations(ctx)
-			if err != nil {
-				log.Error("failed to check closed reservations", "error", err)
-			}
-			if count > 0 {
-				log.Info("closed reservations", "count", count)
-			}
-		}
+	payload, err := marshalReservationId(id)
+	if err != nil {
+		log.Error("failed to marshal payload", "error", err)
+		return uuid.Nil, err
 	}
+	u.broker.Publish("reservation_exchange", "reservation.create", payload)
+
+	return id, nil
 }
 
 func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationId uuid.UUID) error {
@@ -105,7 +117,12 @@ func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationI
 		return err
 	}
 
-	// TODO: send rmq
+	payload, err := marshalReservationId(reservationId)
+	if err != nil {
+		log.Error("failed to marshal payload", "error", err)
+		return err
+	}
+	u.broker.Publish("reservation_exchange", "reservation.cancelled", payload)
 
 	return nil
 }
@@ -127,7 +144,22 @@ func (u *reservationUsecase) CloseReservation(ctx context.Context, reservationId
 		return err
 	}
 
-	// TODO: send rmq
+	payload, err := marshalReservationId(reservationId)
+	if err != nil {
+		log.Error("failed to marshal payload", "error", err)
+		return err
+	}
+	u.broker.Publish("reservation_exchange", "reservation.closed", payload)
 
 	return nil
+}
+
+func marshalReservationId(id uuid.UUID) ([]byte, error) {
+	payload, err := json.Marshal(map[string]string{
+		"reservationId": id.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return payload, nil
 }

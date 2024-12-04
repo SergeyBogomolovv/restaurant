@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/SergeyBogomolovv/restaurant/common/amqp"
 	"github.com/SergeyBogomolovv/restaurant/common/config"
 	"github.com/SergeyBogomolovv/restaurant/common/db"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/app"
@@ -23,10 +24,12 @@ func main() {
 	db := db.MustConnect(cfg.PostgresURL)
 	defer db.Close()
 
-	logger := setupLogger(cfg.Env)
-	logger = logger.With(slog.String("env", cfg.Env))
+	log := setupLogger(cfg.Env).With(slog.String("env", cfg.Env))
 
-	app := app.New(logger, db)
+	amqpConn := amqp.MustConnect(cfg.AmqpURL)
+	defer amqpConn.Close()
+
+	app := app.New(log, db, amqpConn)
 	go app.Run(cfg.Reservation.Port)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)

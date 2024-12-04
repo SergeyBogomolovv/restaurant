@@ -18,9 +18,8 @@ func TestReservationUsecase_CreateReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
-	mockRepo.On("CloseEndedReservations", ctx).Return(int64(0), nil)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, ctx, time.Hour)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
 
 	t.Run("success", func(t *testing.T) {
 		tableId := uuid.New()
@@ -79,9 +78,8 @@ func TestReservationUsecase_CancelReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
-	mockRepo.On("CloseEndedReservations", ctx).Return(int64(0), nil)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, ctx, time.Hour)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
 
 	t.Run("succes", func(t *testing.T) {
 		id := uuid.New()
@@ -106,9 +104,8 @@ func TestReservationUsecase_CloseReservation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
-	mockRepo.On("CloseEndedReservations", ctx).Return(int64(0), nil)
 
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, ctx, time.Hour)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
 
 	t.Run("success", func(t *testing.T) {
 		id := uuid.New()
@@ -131,9 +128,12 @@ func TestReservationUsecase_CheckEndedReservations(t *testing.T) {
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
 	tickerDuration := 50 * time.Millisecond
-	usecase.NewReservationUsecase(logger, mockRepo, ctx, tickerDuration)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
 
 	mockRepo.On("CloseEndedReservations", mock.Anything).Return(int64(2), nil)
+
+	usecase.RunEndedReservationsChecker(ctx, tickerDuration)
+
 	done := make(chan struct{})
 	go func() {
 		time.Sleep(2 * tickerDuration)
