@@ -5,8 +5,8 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -20,36 +20,36 @@ type mockCustomerAuthRepo struct {
 	mock.Mock
 }
 
-func (m *mockCustomerAuthRepo) GetCustomerByEmail(ctx context.Context, email string) (*entities.CustomerEntity, error) {
+func (m *mockCustomerAuthRepo) GetCustomerByEmail(ctx context.Context, email string) (*entities.Customer, error) {
 	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entities.CustomerEntity), args.Error(1)
+	return args.Get(0).(*entities.Customer), args.Error(1)
 }
 
 type mockAdminAuthRepo struct {
 	mock.Mock
 }
 
-func (m *mockAdminAuthRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.AdminEntity, error) {
+func (m *mockAdminAuthRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.Admin, error) {
 	args := m.Called(ctx, login)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entities.AdminEntity), args.Error(1)
+	return args.Get(0).(*entities.Admin), args.Error(1)
 }
 
 type mockWaiterAuthRepo struct {
 	mock.Mock
 }
 
-func (m *mockWaiterAuthRepo) GetWaiterByLogin(ctx context.Context, login string) (*entities.WaiterEntity, error) {
+func (m *mockWaiterAuthRepo) GetWaiterByLogin(ctx context.Context, login string) (*entities.Waiter, error) {
 	args := m.Called(ctx, login)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entities.WaiterEntity), args.Error(1)
+	return args.Get(0).(*entities.Waiter), args.Error(1)
 }
 
 type mockTokensRepo struct {

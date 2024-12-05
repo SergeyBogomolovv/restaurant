@@ -6,23 +6,23 @@ import (
 	"log/slog"
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
+	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type CustomerAuthRepo interface {
-	GetCustomerByEmail(ctx context.Context, email string) (*entities.CustomerEntity, error)
+	GetCustomerByEmail(ctx context.Context, email string) (*entities.Customer, error)
 }
 
 type AdminAuthRepo interface {
-	GetAdminByLogin(ctx context.Context, login string) (*entities.AdminEntity, error)
+	GetAdminByLogin(ctx context.Context, login string) (*entities.Admin, error)
 }
 
 type WaiterAuthRepo interface {
-	GetWaiterByLogin(ctx context.Context, login string) (*entities.WaiterEntity, error)
+	GetWaiterByLogin(ctx context.Context, login string) (*entities.Waiter, error)
 }
 
 type TokensRepo interface {
@@ -71,13 +71,13 @@ func (u *authUsecase) LoginCustomer(ctx context.Context, loginCustomerDto *dto.L
 		return nil, errs.ErrInvalidCredentials
 	}
 
-	accessToken, err := u.tokens.SignAccessToken(customer.CustomerID, constants.RoleCustomer)
+	accessToken, err := u.tokens.SignAccessToken(customer.CustomerID.String(), constants.RoleCustomer)
 	if err != nil {
 		log.Error("failed to sign access token", "error", err)
 		return nil, err
 	}
 
-	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, customer.CustomerID, constants.RoleCustomer)
+	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, customer.CustomerID.String(), constants.RoleCustomer)
 	if err != nil {
 		log.Error("failed to generate refresh token", "error", err)
 		return nil, err
@@ -107,13 +107,13 @@ func (u *authUsecase) LoginAdmin(ctx context.Context, payload *dto.LoginEmployee
 		return nil, errs.ErrInvalidCredentials
 	}
 
-	accessToken, err := u.tokens.SignAccessToken(admin.AdminID, constants.RoleAdmin)
+	accessToken, err := u.tokens.SignAccessToken(admin.AdminID.String(), constants.RoleAdmin)
 	if err != nil {
 		log.Error("failed to sign access token", "error", err)
 		return nil, err
 	}
 
-	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, admin.AdminID, constants.RoleAdmin)
+	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, admin.AdminID.String(), constants.RoleAdmin)
 	if err != nil {
 		log.Error("failed to generate refresh token", "error", err)
 		return nil, err
@@ -143,13 +143,13 @@ func (u *authUsecase) LoginWaiter(ctx context.Context, payload *dto.LoginEmploye
 		return nil, errs.ErrInvalidCredentials
 	}
 
-	accessToken, err := u.tokens.SignAccessToken(waiter.WaiterID, constants.RoleWaiter)
+	accessToken, err := u.tokens.SignAccessToken(waiter.WaiterID.String(), constants.RoleWaiter)
 	if err != nil {
 		log.Error("failed to sign access token", "error", err)
 		return nil, err
 	}
 
-	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, waiter.WaiterID, constants.RoleWaiter)
+	refreshToken, err := u.tokens.GenerateRefreshToken(ctx, waiter.WaiterID.String(), constants.RoleWaiter)
 	if err != nil {
 		log.Error("failed to generate refresh token", "error", err)
 		return nil, err

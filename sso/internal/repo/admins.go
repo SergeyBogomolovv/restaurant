@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,8 +20,8 @@ func NewAdminRepo(db *sqlx.DB) *adminRepo {
 	return &adminRepo{db: db}
 }
 
-func (r *adminRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.AdminEntity, error) {
-	admin := new(entities.AdminEntity)
+func (r *adminRepo) GetAdminByLogin(ctx context.Context, login string) (*entities.Admin, error) {
+	admin := new(entities.Admin)
 	if err := r.db.GetContext(ctx, admin, "SELECT * FROM admins WHERE login = $1", login); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrAdminNotFound

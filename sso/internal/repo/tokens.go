@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
-
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
@@ -46,7 +45,7 @@ func (r *tokensRepo) GenerateRefreshToken(ctx context.Context, entityID string, 
 		return "", err
 	}
 
-	payload, err := json.Marshal(&entities.RefreshTokenEntity{
+	payload, err := json.Marshal(&entities.RefreshToken{
 		EntityID:  entityID,
 		ExpiresAt: exp,
 		Role:      role,
@@ -72,7 +71,7 @@ func (r *tokensRepo) VerifyRefreshToken(ctx context.Context, token string) (*pay
 		return nil, errs.ErrInvalidJwtToken
 	}
 
-	var refreshToken entities.RefreshTokenEntity
+	var refreshToken entities.RefreshToken
 	if err := json.Unmarshal(res, &refreshToken); err != nil {
 		return nil, err
 	}

@@ -6,7 +6,7 @@ reservation:
   port: 10120
   timeout: 10h
 sso:
-  secret_key: 'local-secret-key'
+  secret_key: 'key'
   port: 10116
   timeout: 10h
 jwt:

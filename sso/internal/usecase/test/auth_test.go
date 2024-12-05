@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
+	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/usecase"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,14 +26,14 @@ func TestAuthUsecase_LoginCustomer(t *testing.T) {
 		password := "password123"
 		email := "test@example.com"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		customer := &entities.CustomerEntity{
-			CustomerID: "123",
+		customer := &entities.Customer{
+			CustomerID: uuid.New(),
 			Password:   hashedPassword,
 		}
 
 		mockCustomerRepo.On("GetCustomerByEmail", ctx, email).Return(customer, nil)
-		mockTokensRepo.On("SignAccessToken", customer.CustomerID, constants.RoleCustomer).Return("access-token", nil)
-		mockTokensRepo.On("GenerateRefreshToken", ctx, customer.CustomerID, constants.RoleCustomer).Return("refresh-token", nil)
+		mockTokensRepo.On("SignAccessToken", customer.CustomerID.String(), constants.RoleCustomer).Return("access-token", nil)
+		mockTokensRepo.On("GenerateRefreshToken", ctx, customer.CustomerID.String(), constants.RoleCustomer).Return("refresh-token", nil)
 
 		loginDTO := &dto.LoginCustomerDTO{Email: email, Password: password}
 
@@ -60,8 +61,8 @@ func TestAuthUsecase_LoginCustomer(t *testing.T) {
 	t.Run("invalid password", func(t *testing.T) {
 		email := "wrongpassword@example.com"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
-		customer := &entities.CustomerEntity{
-			CustomerID: "123",
+		customer := &entities.Customer{
+			CustomerID: uuid.New(),
 			Password:   hashedPassword,
 		}
 		mockCustomerRepo.On("GetCustomerByEmail", ctx, email).Return(customer, nil)
@@ -86,14 +87,14 @@ func TestAuthUsecase_LoginAdmin(t *testing.T) {
 		password := "adminpass123"
 		login := "adminlogin"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		admin := &entities.AdminEntity{
-			AdminID:  "456",
+		admin := &entities.Admin{
+			AdminID:  uuid.New(),
 			Password: hashedPassword,
 		}
 
 		mockAdminRepo.On("GetAdminByLogin", ctx, login).Return(admin, nil)
-		mockTokensRepo.On("SignAccessToken", admin.AdminID, constants.RoleAdmin).Return("admin-access-token", nil)
-		mockTokensRepo.On("GenerateRefreshToken", ctx, admin.AdminID, constants.RoleAdmin).Return("admin-refresh-token", nil)
+		mockTokensRepo.On("SignAccessToken", admin.AdminID.String(), constants.RoleAdmin).Return("admin-access-token", nil)
+		mockTokensRepo.On("GenerateRefreshToken", ctx, admin.AdminID.String(), constants.RoleAdmin).Return("admin-refresh-token", nil)
 
 		loginDTO := &dto.LoginEmployeeDTO{Login: login, Password: password}
 
@@ -121,8 +122,8 @@ func TestAuthUsecase_LoginAdmin(t *testing.T) {
 	t.Run("invalid password", func(t *testing.T) {
 		login := "adminlogin"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpass"), bcrypt.DefaultCost)
-		admin := &entities.AdminEntity{
-			AdminID:  "456",
+		admin := &entities.Admin{
+			AdminID:  uuid.New(),
 			Password: hashedPassword,
 		}
 		mockAdminRepo.On("GetAdminByLogin", ctx, login).Return(admin, nil)
@@ -147,14 +148,14 @@ func TestAuthUsecase_LoginWaiter(t *testing.T) {
 		password := "waiterpass123"
 		login := "waiterlogin"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		waiter := &entities.WaiterEntity{
-			WaiterID: "789",
+		waiter := &entities.Waiter{
+			WaiterID: uuid.New(),
 			Password: hashedPassword,
 		}
 
 		mockWaiterRepo.On("GetWaiterByLogin", ctx, login).Return(waiter, nil)
-		mockTokensRepo.On("SignAccessToken", waiter.WaiterID, constants.RoleWaiter).Return("waiter-access-token", nil)
-		mockTokensRepo.On("GenerateRefreshToken", ctx, waiter.WaiterID, constants.RoleWaiter).Return("waiter-refresh-token", nil)
+		mockTokensRepo.On("SignAccessToken", waiter.WaiterID.String(), constants.RoleWaiter).Return("waiter-access-token", nil)
+		mockTokensRepo.On("GenerateRefreshToken", ctx, waiter.WaiterID.String(), constants.RoleWaiter).Return("waiter-refresh-token", nil)
 
 		loginDTO := &dto.LoginEmployeeDTO{Login: login, Password: password}
 
@@ -182,8 +183,8 @@ func TestAuthUsecase_LoginWaiter(t *testing.T) {
 	t.Run("invalid password", func(t *testing.T) {
 		login := "waiterlogin"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpass"), bcrypt.DefaultCost)
-		waiter := &entities.WaiterEntity{
-			WaiterID: "789",
+		waiter := &entities.Waiter{
+			WaiterID: uuid.New(),
 			Password: hashedPassword,
 		}
 		mockWaiterRepo.On("GetWaiterByLogin", ctx, login).Return(waiter, nil)

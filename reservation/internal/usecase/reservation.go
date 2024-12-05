@@ -95,7 +95,10 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 		log.Error("failed to marshal payload", "error", err)
 		return uuid.Nil, err
 	}
-	u.broker.Publish("reservation.create", payload)
+	if err := u.broker.Publish("reservation.create", payload); err != nil {
+		log.Error("failed to publish message", "error", err)
+		return uuid.Nil, err
+	}
 
 	return id, nil
 }

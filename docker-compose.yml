@@ -35,7 +35,7 @@ services:
       - db
 
   rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:management
     container_name: rabbitmq
     ports:
       - '15672:15672'

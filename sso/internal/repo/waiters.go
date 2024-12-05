@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,8 +20,8 @@ func NewWaiterRepo(db *sqlx.DB) *waiterRepo {
 	return &waiterRepo{db: db}
 }
 
-func (r *waiterRepo) GetWaiterByLogin(ctx context.Context, login string) (*entities.WaiterEntity, error) {
-	waiter := new(entities.WaiterEntity)
+func (r *waiterRepo) GetWaiterByLogin(ctx context.Context, login string) (*entities.Waiter, error) {
+	waiter := new(entities.Waiter)
 	if err := r.db.GetContext(ctx, waiter, "SELECT * FROM waiters WHERE login = $1", login); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.ErrWaiterNotFound
