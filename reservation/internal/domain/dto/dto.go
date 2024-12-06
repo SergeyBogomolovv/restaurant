@@ -3,7 +3,6 @@ package dto
 import (
 	"time"
 
-	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/entities"
 	"github.com/google/uuid"
 )
 
@@ -15,20 +14,10 @@ type CreateReservationDTO struct {
 	PersonsCount int       `validate:"required,min=1,max=8"`
 }
 
-type ReservationCreatedDTO struct {
-	ReservationID uuid.UUID `json:"reservation_id"`
-	TableID       uuid.UUID `json:"table_id"`
-	PersonsCount  int       `json:"persons_count"`
-	StartTime     time.Time `json:"start_time"`
-	EndTime       time.Time `json:"end_time"`
-}
-
-func NewReservationCreatedDTO(reservation *entities.Reservation) *ReservationCreatedDTO {
-	return &ReservationCreatedDTO{
-		ReservationID: reservation.ReservationID,
-		TableID:       reservation.TableID,
-		PersonsCount:  reservation.PersonsCount,
-		StartTime:     reservation.StartTime,
-		EndTime:       reservation.EndTime,
-	}
+type ReservationCreated struct {
+	ReservationID uuid.UUID `json:"reservation_id" db:"reservation_id"`
+	TableID       uuid.UUID `json:"table_id" db:"table_id"`
+	PersonsCount  int       `json:"persons_count" db:"persons_count"`
+	StartTime     time.Time `json:"start_time" db:"start_time"`
+	EndTime       time.Time `json:"end_time" db:"end_time"`
 }

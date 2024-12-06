@@ -41,9 +41,5 @@ func (b *RabbitMQBroker) Setup() error {
 	}
 	defer ch.Close()
 
-	if err := ch.ExchangeDeclare(constants.ReservationExchange, "topic", true, false, false, false, nil); err != nil {
-		return err
-	}
-
-	return nil
+	return ch.ExchangeDeclare(constants.ReservationExchange, "topic", true, false, false, false, nil)
 }

@@ -23,3 +23,7 @@ type RegisterWaiterDTO struct {
 	LastName  string `validate:"required"`
 	Token     string `validate:"required"`
 }
+
+type CustomerRegisteredDTO struct {
+	CustomerID string `json:"customer_id"`
+}

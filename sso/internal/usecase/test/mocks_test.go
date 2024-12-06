@@ -118,3 +118,11 @@ func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, dto *dto.Crea
 	args := m.Called(ctx, dto)
 	return args.Get(0).(*entities.Waiter), args.Error(1)
 }
+
+type mockBroker struct {
+	mock.Mock
+}
+
+func (b *mockBroker) Publish(routingKey string, payload any) error {
+	return b.Called(routingKey, payload).Error(0)
+}

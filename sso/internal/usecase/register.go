@@ -11,6 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Broker interface {
+	Publish(routingKey string, payload any) error
+}
+
 type CustomerRegisterRepo interface {
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
 	CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error)
@@ -31,6 +35,7 @@ type registerUsecase struct {
 	admins    AdminRegisterRepo
 	waiters   WaiterRegisterRepo
 	log       *slog.Logger
+	broker    Broker
 	secretKey string
 }
 
@@ -39,6 +44,7 @@ func NewRegisterUsecase(
 	customers CustomerRegisterRepo,
 	waiters WaiterRegisterRepo,
 	admins AdminRegisterRepo,
+	broker Broker,
 	secretKey string,
 ) *registerUsecase {
 	return &registerUsecase{
@@ -47,6 +53,7 @@ func NewRegisterUsecase(
 		waiters:   waiters,
 		log:       log,
 		secretKey: secretKey,
+		broker:    broker,
 	}
 }
 
@@ -84,7 +91,10 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, payload *dto.Reg
 		return uuid.Nil, err
 	}
 
-	//TODO: send message to broker
+	if err := u.broker.Publish("register.customer", dto.CustomerRegisteredDTO{CustomerID: customer.CustomerID.String()}); err != nil {
+		log.Error("failed to publish message", "error", err)
+		return uuid.Nil, err
+	}
 
 	log.Info("customer registered", "customerId", customer.CustomerID)
 	return customer.CustomerID, nil

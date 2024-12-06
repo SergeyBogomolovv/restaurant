@@ -2,20 +2,18 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/errors"
 	"github.com/google/uuid"
 )
 
 type ReservationRepo interface {
-	CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (*entities.Reservation, error)
+	CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (*dto.ReservationCreated, error)
 	SetReservationStatus(ctx context.Context, reservationID uuid.UUID, status string) error
 	CloseEndedReservations(ctx context.Context) (int64, error)
 	GetTableExists(ctx context.Context, tableID uuid.UUID) (bool, error)
@@ -91,13 +89,12 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, payload *dto
 		return uuid.Nil, err
 	}
 
-	messagePayload := dto.NewReservationCreatedDTO(reservation)
-	if err := u.broker.Publish("reservation.created", messagePayload); err != nil {
+	if err := u.broker.Publish("reservation.created", reservation); err != nil {
 		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 
-	return reservation.CustomerID, nil
+	return reservation.ReservationID, nil
 }
 
 func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationId uuid.UUID) error {
@@ -117,12 +114,7 @@ func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationI
 		return err
 	}
 
-	payload, err := marshalReservationId(reservationId)
-	if err != nil {
-		log.Error("failed to marshal payload", "error", err)
-		return err
-	}
-	u.broker.Publish("reservation.cancelled", payload)
+	//TODO: publish message
 
 	return nil
 }
@@ -144,22 +136,7 @@ func (u *reservationUsecase) CloseReservation(ctx context.Context, reservationId
 		return err
 	}
 
-	payload, err := marshalReservationId(reservationId)
-	if err != nil {
-		log.Error("failed to marshal payload", "error", err)
-		return err
-	}
-	u.broker.Publish("reservation.closed", payload)
+	//TODO: publish message
 
 	return nil
-}
-
-func marshalReservationId(id uuid.UUID) ([]byte, error) {
-	payload, err := json.Marshal(map[string]string{
-		"reservationId": id.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return payload, nil
 }

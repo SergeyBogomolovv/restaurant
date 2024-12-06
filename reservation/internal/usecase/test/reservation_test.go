@@ -20,60 +20,44 @@ func TestReservationUsecase_CreateReservation(t *testing.T) {
 	mockRepo := new(mockReservationRepo)
 	mockBroker := new(mockBroker)
 
-	//TODO: update
-	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
 	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("success", func(t *testing.T) {
 		tableId := uuid.New()
-		dto := &dto.CreateReservationDTO{
-			CustomerID: uuid.New(),
-			TableID:    tableId,
-			StartTime:  time.Unix(1730455200, 0),
-			EndTime:    time.Unix(1730458800, 0),
-		}
-
-		mockRepo.On("GetTableExists", ctx, tableId).Return(true, nil)
 		resultId := uuid.New()
-		mockRepo.On("CreateReservation", ctx, dto).Return(resultId, nil)
-		reservationID, err := usecase.CreateReservation(ctx, dto)
+
+		mockRepo.On("GetTableExists", ctx, tableId).Return(true, nil).Once()
+		mockRepo.On("CreateReservation", ctx, mock.Anything).Return(&dto.ReservationCreated{ReservationID: resultId}, nil).Once()
+		mockBroker.On("Publish", "reservation.created", mock.Anything).Return(nil).Once()
+		reservationID, err := usecase.CreateReservation(ctx, &dto.CreateReservationDTO{TableID: tableId})
 
 		assert.NoError(t, err)
 		assert.Equal(t, reservationID, resultId)
+		mockRepo.AssertExpectations(t)
+		mockBroker.AssertExpectations(t)
 	})
 
 	t.Run("table not found", func(t *testing.T) {
 		tableId := uuid.New()
-		dto := &dto.CreateReservationDTO{
-			CustomerID: uuid.New(),
-			TableID:    tableId,
-			StartTime:  time.Unix(1730455200, 0),
-			EndTime:    time.Unix(1730458800, 0),
-		}
 
-		mockRepo.On("GetTableExists", ctx, tableId).Return(false, nil)
+		mockRepo.On("GetTableExists", ctx, tableId).Return(false, nil).Once()
 
-		id, err := usecase.CreateReservation(ctx, dto)
+		id, err := usecase.CreateReservation(ctx, &dto.CreateReservationDTO{TableID: tableId})
 
 		assert.Equal(t, id, uuid.Nil)
 		assert.ErrorIs(t, err, errs.ErrTableNotFound)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("table is reserved", func(t *testing.T) {
 		tableId := uuid.New()
-		dto := &dto.CreateReservationDTO{
-			CustomerID: uuid.New(),
-			TableID:    tableId,
-			StartTime:  time.Unix(1730455200, 0),
-			EndTime:    time.Unix(1730458800, 0),
-		}
-		mockRepo.On("GetTableExists", ctx, tableId).Return(true, nil)
-		mockRepo.On("CreateReservation", ctx, dto).Return(uuid.Nil, errs.ErrTableAlreadyReserved)
-
-		id, err := usecase.CreateReservation(ctx, dto)
+		mockRepo.On("GetTableExists", ctx, tableId).Return(true, nil).Once()
+		mockRepo.On("CreateReservation", ctx, mock.Anything).Return((*dto.ReservationCreated)(nil), errs.ErrTableAlreadyReserved).Once()
+		id, err := usecase.CreateReservation(ctx, &dto.CreateReservationDTO{TableID: tableId})
 
 		assert.Equal(t, id, uuid.Nil)
 		assert.ErrorIs(t, err, errs.ErrTableAlreadyReserved)
+		mockRepo.AssertExpectations(t)
 	})
 }
 
@@ -83,26 +67,26 @@ func TestReservationUsecase_CancelReservation(t *testing.T) {
 	mockRepo := new(mockReservationRepo)
 	mockBroker := new(mockBroker)
 
-	//TODO: update
-	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
 	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("succes", func(t *testing.T) {
 		id := uuid.New()
-		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusCancelled).Return(nil)
+		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusCancelled).Return(nil).Once()
 
 		err := usecase.CancelReservation(ctx, id)
 
 		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("reservation not found", func(t *testing.T) {
 		id := uuid.New()
-		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusCancelled).Return(errs.ErrReservationNotFound)
+		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusCancelled).Return(errs.ErrReservationNotFound).Once()
 
 		err := usecase.CancelReservation(ctx, id)
 
 		assert.ErrorIs(t, err, errs.ErrReservationNotFound)
+		mockRepo.AssertExpectations(t)
 	})
 }
 
@@ -112,22 +96,24 @@ func TestReservationUsecase_CloseReservation(t *testing.T) {
 	mockRepo := new(mockReservationRepo)
 	mockBroker := new(mockBroker)
 
-	//TODO: update
-	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
 	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
 
 	t.Run("success", func(t *testing.T) {
 		id := uuid.New()
-		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusClosed).Return(nil)
+		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusClosed).Return(nil).Once()
 		err := usecase.CloseReservation(ctx, id)
+
 		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("reservation not found", func(t *testing.T) {
 		id := uuid.New()
-		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusClosed).Return(errs.ErrReservationNotFound)
+		mockRepo.On("SetReservationStatus", ctx, id, constants.ReservationStatusClosed).Return(errs.ErrReservationNotFound).Once()
 		err := usecase.CloseReservation(ctx, id)
+
 		assert.ErrorIs(t, err, errs.ErrReservationNotFound)
+		mockRepo.AssertExpectations(t)
 	})
 }
 
@@ -136,12 +122,9 @@ func TestReservationUsecase_CheckEndedReservations(t *testing.T) {
 	defer cancel()
 	logger := NewTestLogger()
 	mockRepo := new(mockReservationRepo)
-	mockBroker := new(mockBroker)
 
-	//TODO: update
-	mockBroker.On("Publish", mock.Anything, mock.Anything).Return(nil)
 	tickerDuration := 50 * time.Millisecond
-	usecase := usecase.NewReservationUsecase(logger, mockRepo, mockBroker)
+	usecase := usecase.NewReservationUsecase(logger, mockRepo, nil)
 
 	mockRepo.On("CloseEndedReservations", mock.Anything).Return(int64(2), nil)
 

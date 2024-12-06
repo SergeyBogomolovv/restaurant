@@ -6,10 +6,12 @@ import (
 	"net"
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/infra/broker"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/infra/handler"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/repo"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/usecase"
 	"github.com/jmoiron/sqlx"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 )
@@ -19,14 +21,18 @@ type App struct {
 	log    *slog.Logger
 }
 
-func New(log *slog.Logger, db *sqlx.DB, rdb *redis.Client, jwtConfig config.JwtConfig, secretKey string) *App {
+func New(log *slog.Logger, db *sqlx.DB, rdb *redis.Client, amqpConn *amqp.Connection, jwtConfig config.JwtConfig, secretKey string) *App {
 	customerRepo := repo.NewCustomerRepo(db)
 	adminRepo := repo.NewAdminRepo(db)
 	waiterRepo := repo.NewWaiterRepo(db)
 
 	tokensRepo := repo.NewTokensRepo(rdb, jwtConfig)
 	authUsecase := usecase.NewAuthUsecase(log, customerRepo, waiterRepo, adminRepo, tokensRepo)
-	registerUsecase := usecase.NewRegisterUsecase(log, customerRepo, waiterRepo, adminRepo, secretKey)
+	broker := broker.NewRabbitMQBroker(amqpConn)
+	if err := broker.Setup(); err != nil {
+		panic(err)
+	}
+	registerUsecase := usecase.NewRegisterUsecase(log, customerRepo, waiterRepo, adminRepo, broker, secretKey)
 
 	server := grpc.NewServer()
 	handler.RegisterGRPCHandler(server, authUsecase, registerUsecase)

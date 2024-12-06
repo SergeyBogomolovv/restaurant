@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/SergeyBogomolovv/restaurant/common/amqp"
 	"github.com/SergeyBogomolovv/restaurant/common/config"
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	"github.com/SergeyBogomolovv/restaurant/common/db"
@@ -17,13 +18,17 @@ import (
 func main() {
 	cfg := config.MustLoad()
 	db := db.MustConnect(cfg.PostgresURL)
+	defer db.Close()
+
 	redis := redis.MustConnect(cfg.RedisURL)
 	defer redis.Close()
-	defer db.Close()
+
+	amqpConn := amqp.MustConnect(cfg.AmqpURL)
+	defer amqpConn.Close()
 
 	logger := setupLogger(cfg.Env).With(slog.String("env", cfg.Env))
 
-	app := app.New(logger, db, redis, cfg.Jwt, cfg.SSO.SecretKey)
+	app := app.New(logger, db, redis, amqpConn, cfg.Jwt, cfg.SSO.SecretKey)
 	go app.Run(cfg.SSO.Port)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
