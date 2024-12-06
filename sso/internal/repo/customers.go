@@ -41,11 +41,14 @@ func (r *customerRepo) CheckEmailExists(ctx context.Context, email string) (bool
 	return isExists, nil
 }
 
-func (r *customerRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error) {
-	customer := new(entities.Customer)
-	query := "INSERT INTO customers (email, password, name, birth_date) VALUES ($1, $2, $3, $4) RETURNING *"
-	if err := r.db.GetContext(ctx, customer, query, dto.Email, dto.Password, dto.Name, dto.Birthdate); err != nil {
+func (r *customerRepo) CreateCustomer(ctx context.Context, payload *dto.CreateCustomerDTO) (*dto.RegisterCustomerResult, error) {
+	result := new(dto.RegisterCustomerResult)
+	if err := r.db.GetContext(ctx, result, `
+	INSERT INTO customers (email, password, name, birth_date) 
+	VALUES ($1, $2, $3, $4)
+	RETURNING customer_id, name, birth_date
+	`, payload.Email, payload.Password, payload.Name, payload.Birthdate); err != nil {
 		return nil, err
 	}
-	return customer, nil
+	return result, nil
 }

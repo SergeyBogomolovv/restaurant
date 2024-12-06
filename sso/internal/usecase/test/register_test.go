@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+// TODO: refactor
 func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 	ctx := context.Background()
 	log := NewTestLogger()

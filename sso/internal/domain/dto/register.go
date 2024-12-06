@@ -1,6 +1,10 @@
 package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type RegisterCustomerDTO struct {
 	Email     string    `validate:"required,email"`
@@ -9,11 +13,23 @@ type RegisterCustomerDTO struct {
 	Password  string    `validate:"required"`
 }
 
+type RegisterCustomerResult struct {
+	CustomerID uuid.UUID `json:"customer_id" db:"customer_id"`
+	Name       string    `json:"name" db:"name"`
+	Birthdate  string    `json:"birth_date" db:"birth_date"`
+}
+
 type RegisterAdminDTO struct {
 	Note     string
 	Login    string `validate:"required"`
 	Password string `validate:"required"`
 	Token    string `validate:"required"`
+}
+
+type RegisterWaiterResult struct {
+	WaiterID  uuid.UUID `json:"waiter_id" db:"waiter_id"`
+	FirstName string    `json:"first_name" db:"first_name"`
+	LastName  string    `json:"last_name" db:"last_name"`
 }
 
 type RegisterWaiterDTO struct {
@@ -24,6 +40,7 @@ type RegisterWaiterDTO struct {
 	Token     string `validate:"required"`
 }
 
-type CustomerRegisteredDTO struct {
-	CustomerID string `json:"customer_id"`
+type RegisterAdminResult struct {
+	AdminID uuid.UUID `json:"admin_id" db:"admin_id"`
+	Login   string    `json:"login" db:"login"`
 }

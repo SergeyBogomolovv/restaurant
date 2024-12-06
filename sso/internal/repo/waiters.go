@@ -41,12 +41,14 @@ func (r *waiterRepo) CheckLoginExists(ctx context.Context, login string) (bool, 
 	return isExists, nil
 }
 
-func (r *waiterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*entities.Waiter, error) {
-	waiter := new(entities.Waiter)
-	if err := r.db.GetContext(ctx, waiter, `
-		INSERT INTO waiters (login, password, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING *
-		`, dto.Login, dto.Password, dto.FirstName, dto.LastName); err != nil {
+func (r *waiterRepo) CreateWaiter(ctx context.Context, payload *dto.CreateWaiterDTO) (*dto.RegisterWaiterResult, error) {
+	result := new(dto.RegisterWaiterResult)
+	if err := r.db.GetContext(ctx, result, `
+		INSERT INTO waiters (login, password, first_name, last_name) 
+		VALUES ($1, $2, $3, $4) 
+		RETURNING waiter_id, first_name, last_name
+		`, payload.Login, payload.Password, payload.FirstName, payload.LastName); err != nil {
 		return nil, err
 	}
-	return waiter, nil
+	return result, nil
 }

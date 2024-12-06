@@ -86,9 +86,9 @@ func (m *mockCustomerRegisterRepo) CheckEmailExists(ctx context.Context, email s
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(*entities.Customer), args.Error(1)
+func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, payload *dto.CreateCustomerDTO) (*dto.RegisterCustomerResult, error) {
+	args := m.Called(ctx, payload)
+	return args.Get(0).(*dto.RegisterCustomerResult), args.Error(1)
 }
 
 type mockAdminRegisterRepo struct {
@@ -100,9 +100,9 @@ func (m *mockAdminRegisterRepo) CheckLoginExists(ctx context.Context, login stri
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*entities.Admin, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(*entities.Admin), args.Error(1)
+func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, payload *dto.CreateAdminDTO) (*dto.RegisterAdminResult, error) {
+	args := m.Called(ctx, payload)
+	return args.Get(0).(*dto.RegisterAdminResult), args.Error(1)
 }
 
 type mockWaiterRegisterRepo struct {
@@ -114,9 +114,9 @@ func (m *mockWaiterRegisterRepo) CheckLoginExists(ctx context.Context, login str
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*entities.Waiter, error) {
-	args := m.Called(ctx, dto)
-	return args.Get(0).(*entities.Waiter), args.Error(1)
+func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, payload *dto.CreateWaiterDTO) (*dto.RegisterWaiterResult, error) {
+	args := m.Called(ctx, payload)
+	return args.Get(0).(*dto.RegisterWaiterResult), args.Error(1)
 }
 
 type mockBroker struct {

@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -17,17 +16,17 @@ type Broker interface {
 
 type CustomerRegisterRepo interface {
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
-	CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error)
+	CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*dto.RegisterCustomerResult, error)
 }
 
 type AdminRegisterRepo interface {
 	CheckLoginExists(ctx context.Context, login string) (bool, error)
-	CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*entities.Admin, error)
+	CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*dto.RegisterAdminResult, error)
 }
 
 type WaiterRegisterRepo interface {
 	CheckLoginExists(ctx context.Context, login string) (bool, error)
-	CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*entities.Waiter, error)
+	CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*dto.RegisterWaiterResult, error)
 }
 
 type registerUsecase struct {
@@ -80,7 +79,7 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, payload *dto.Reg
 		return uuid.Nil, err
 	}
 
-	customer, err := u.customers.CreateCustomer(ctx, &dto.CreateCustomerDTO{
+	result, err := u.customers.CreateCustomer(ctx, &dto.CreateCustomerDTO{
 		Email:     payload.Email,
 		Name:      payload.Name,
 		Birthdate: payload.Birthdate,
@@ -91,13 +90,13 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, payload *dto.Reg
 		return uuid.Nil, err
 	}
 
-	if err := u.broker.Publish("register.customer", dto.CustomerRegisteredDTO{CustomerID: customer.CustomerID.String()}); err != nil {
+	if err := u.broker.Publish("register.customer", result); err != nil {
 		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 
-	log.Info("customer registered", "customerId", customer.CustomerID)
-	return customer.CustomerID, nil
+	log.Info("customer registered", "customerId", result.CustomerID)
+	return result.CustomerID, nil
 }
 
 func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.RegisterWaiterDTO) (uuid.UUID, error) {
@@ -127,7 +126,7 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.Regis
 		return uuid.Nil, err
 	}
 
-	waiter, err := u.waiters.CreateWaiter(ctx, &dto.CreateWaiterDTO{
+	result, err := u.waiters.CreateWaiter(ctx, &dto.CreateWaiterDTO{
 		Login:     payload.Login,
 		Password:  hashedPassword,
 		FirstName: payload.FirstName,
@@ -138,10 +137,13 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.Regis
 		return uuid.Nil, err
 	}
 
-	//TODO: send message to broker
+	if err := u.broker.Publish("register.waiter", result); err != nil {
+		log.Error("failed to publish message", "error", err)
+		return uuid.Nil, err
+	}
 
-	log.Info("waiter registered", "waiterId", waiter.WaiterID)
-	return waiter.WaiterID, nil
+	log.Info("waiter registered", "waiterId", result.WaiterID)
+	return result.WaiterID, nil
 }
 
 func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.RegisterAdminDTO) (uuid.UUID, error) {
@@ -172,7 +174,7 @@ func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.Regist
 		return uuid.Nil, err
 	}
 
-	admin, err := u.admins.CreateAdmin(ctx, &dto.CreateAdminDTO{
+	result, err := u.admins.CreateAdmin(ctx, &dto.CreateAdminDTO{
 		Login:    payload.Login,
 		Password: hashedPassword,
 		Note:     payload.Note,
@@ -182,10 +184,13 @@ func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.Regist
 		return uuid.Nil, err
 	}
 
-	//TODO: send message to broker
+	if err := u.broker.Publish("register.admin", result); err != nil {
+		log.Error("failed to publish message", "error", err)
+		return uuid.Nil, err
+	}
 
-	log.Info("admin registered", "adminId", admin.AdminID)
-	return admin.AdminID, nil
+	log.Info("admin registered", "adminId", result.AdminID)
+	return result.AdminID, nil
 }
 
 func (u *registerUsecase) HashPassword(password string) ([]byte, error) {

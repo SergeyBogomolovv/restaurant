@@ -41,12 +41,14 @@ func (r *adminRepo) CheckLoginExists(ctx context.Context, login string) (bool, e
 	return isExists, nil
 }
 
-func (r *adminRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*entities.Admin, error) {
-	admin := new(entities.Admin)
-	if err := r.db.GetContext(ctx, admin, `
-		INSERT INTO admins (login, password, note) VALUES ($1, $2, $3) RETURNING *
-		`, dto.Login, dto.Password, dto.Note); err != nil {
+func (r *adminRepo) CreateAdmin(ctx context.Context, payload *dto.CreateAdminDTO) (*dto.RegisterAdminResult, error) {
+	result := new(dto.RegisterAdminResult)
+	if err := r.db.GetContext(ctx, result, `
+		INSERT INTO admins (login, password, note)
+		VALUES ($1, $2, $3) 
+		RETURNING admin_id, login
+		`, payload.Login, payload.Password, payload.Note); err != nil {
 		return nil, err
 	}
-	return admin, nil
+	return result, nil
 }
