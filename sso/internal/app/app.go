@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/SergeyBogomolovv/restaurant/common/config"
-	"github.com/SergeyBogomolovv/restaurant/sso/internal/handler"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/infra/handler"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/repo"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/usecase"
 	"github.com/jmoiron/sqlx"

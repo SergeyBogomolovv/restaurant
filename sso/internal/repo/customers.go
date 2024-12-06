@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -42,11 +41,11 @@ func (r *customerRepo) CheckEmailExists(ctx context.Context, email string) (bool
 	return isExists, nil
 }
 
-func (r *customerRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (uuid.UUID, error) {
-	var customerId uuid.UUID
-	query := "INSERT INTO customers (email, password, name, birth_date) VALUES ($1, $2, $3, $4) RETURNING customer_id"
-	if err := r.db.GetContext(ctx, &customerId, query, dto.Email, dto.Password, dto.Name, dto.Birthdate); err != nil {
-		return uuid.Nil, err
+func (r *customerRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error) {
+	customer := new(entities.Customer)
+	query := "INSERT INTO customers (email, password, name, birth_date) VALUES ($1, $2, $3, $4) RETURNING *"
+	if err := r.db.GetContext(ctx, customer, query, dto.Email, dto.Password, dto.Name, dto.Birthdate); err != nil {
+		return nil, err
 	}
-	return customerId, nil
+	return customer, nil
 }

@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -42,12 +41,12 @@ func (r *adminRepo) CheckLoginExists(ctx context.Context, login string) (bool, e
 	return isExists, nil
 }
 
-func (r *adminRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (uuid.UUID, error) {
-	var id uuid.UUID
-	if err := r.db.GetContext(ctx, &id, `
-		INSERT INTO admins (login, password, note) VALUES ($1, $2, $3) RETURNING admin_id
+func (r *adminRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*entities.Admin, error) {
+	admin := new(entities.Admin)
+	if err := r.db.GetContext(ctx, admin, `
+		INSERT INTO admins (login, password, note) VALUES ($1, $2, $3) RETURNING *
 		`, dto.Login, dto.Password, dto.Note); err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
-	return id, nil
+	return admin, nil
 }

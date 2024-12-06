@@ -5,10 +5,9 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -87,9 +86,9 @@ func (m *mockCustomerRegisterRepo) CheckEmailExists(ctx context.Context, email s
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (uuid.UUID, error) {
+func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*entities.Customer, error) {
 	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
+	return args.Get(0).(*entities.Customer), args.Error(1)
 }
 
 type mockAdminRegisterRepo struct {
@@ -101,9 +100,9 @@ func (m *mockAdminRegisterRepo) CheckLoginExists(ctx context.Context, login stri
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (uuid.UUID, error) {
+func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*entities.Admin, error) {
 	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
+	return args.Get(0).(*entities.Admin), args.Error(1)
 }
 
 type mockWaiterRegisterRepo struct {
@@ -115,7 +114,7 @@ func (m *mockWaiterRegisterRepo) CheckLoginExists(ctx context.Context, login str
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (uuid.UUID, error) {
+func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*entities.Waiter, error) {
 	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
+	return args.Get(0).(*entities.Waiter), args.Error(1)
 }

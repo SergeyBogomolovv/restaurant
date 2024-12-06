@@ -6,8 +6,8 @@ import (
 	"log/slog"
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
-	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/pkg/payload"
 	"golang.org/x/crypto/bcrypt"

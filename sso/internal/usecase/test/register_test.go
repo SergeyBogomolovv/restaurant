@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/usecase"
 	"github.com/google/uuid"
@@ -33,11 +34,11 @@ func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 		})
 		customerRepo.On("CheckEmailExists", ctx, payload.Email).Return(false, nil)
 		customerId := uuid.New()
-		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return(customerId, nil)
+		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return(&entities.Customer{CustomerID: customerId}, nil)
 
 		id, err := usecase.RegisterCustomer(ctx, payload)
 		assert.NoError(t, err)
-		assert.Equal(t, id, customerId)
+		assert.Equal(t, customerId, id)
 
 		customerRepo.AssertExpectations(t)
 	})
@@ -78,12 +79,12 @@ func TestRegisterUsecase_RegisterWaiter(t *testing.T) {
 			waiterRepo.Calls = nil
 		})
 		waiterRepo.On("CheckLoginExists", ctx, payload.Login).Return(false, nil)
-		waiterId := uuid.New()
-		waiterRepo.On("CreateWaiter", ctx, mock.Anything).Return(waiterId, nil)
+		waiterID := uuid.New()
+		waiterRepo.On("CreateWaiter", ctx, mock.Anything).Return(&entities.Waiter{WaiterID: waiterID}, nil)
 
 		id, err := usecase.RegisterWaiter(ctx, payload)
 		assert.NoError(t, err)
-		assert.Equal(t, id, waiterId)
+		assert.Equal(t, id, waiterID)
 
 		waiterRepo.AssertExpectations(t)
 	})
@@ -137,7 +138,7 @@ func TestRegisterUsecase_RegisterAdmin(t *testing.T) {
 		})
 		adminRepo.On("CheckLoginExists", ctx, payload.Login).Return(false, nil)
 		adminId := uuid.New()
-		adminRepo.On("CreateAdmin", ctx, mock.Anything).Return(adminId, nil)
+		adminRepo.On("CreateAdmin", ctx, mock.Anything).Return(&entities.Admin{AdminID: adminId}, nil)
 
 		id, err := usecase.RegisterAdmin(ctx, payload)
 		assert.NoError(t, err)

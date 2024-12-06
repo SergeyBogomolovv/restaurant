@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/SergeyBogomolovv/restaurant/common/entities"
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/sso/internal/domain/errors"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -42,12 +41,12 @@ func (r *waiterRepo) CheckLoginExists(ctx context.Context, login string) (bool, 
 	return isExists, nil
 }
 
-func (r *waiterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (uuid.UUID, error) {
-	var id uuid.UUID
-	if err := r.db.GetContext(ctx, &id, `
-		INSERT INTO waiters (login, password, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING waiter_id
+func (r *waiterRepo) CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*entities.Waiter, error) {
+	waiter := new(entities.Waiter)
+	if err := r.db.GetContext(ctx, waiter, `
+		INSERT INTO waiters (login, password, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING *
 		`, dto.Login, dto.Password, dto.FirstName, dto.LastName); err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
-	return id, nil
+	return waiter, nil
 }
