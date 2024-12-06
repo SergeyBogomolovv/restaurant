@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/errors"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -31,18 +32,25 @@ func (r *reservationRepo) GetTableExists(ctx context.Context, tableID uuid.UUID)
 	return isExists, nil
 }
 
-func (r *reservationRepo) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (uuid.UUID, error) {
-	var id uuid.UUID
-	query := `INSERT INTO reservations (customer_id, table_id, start_time, end_time) VALUES ($1, $2, $3, $4) RETURNING reservation_id`
-	if err := r.db.GetContext(ctx, &id, query, dto.CustomerID, dto.TableID, dto.StartTime, dto.EndTime); err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Message == "table already reserved" {
-				return uuid.Nil, errs.ErrTableAlreadyReserved
-			}
+func (r *reservationRepo) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (*entities.Reservation, error) {
+	reservation := new(entities.Reservation)
+	query := `INSERT INTO reservations (customer_id, table_id, start_time, end_time, persons_count) VALUES ($1, $2, $3, $4, $5) RETURNING *`
+	if err := r.db.GetContext(
+		ctx,
+		reservation,
+		query,
+		dto.CustomerID,
+		dto.TableID,
+		dto.StartTime,
+		dto.EndTime,
+		dto.PersonsCount,
+	); err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Message == "table already reserved" {
+			return nil, errs.ErrTableAlreadyReserved
 		}
-		return uuid.Nil, err
+		return nil, err
 	}
-	return id, nil
+	return reservation, nil
 }
 
 func (r *reservationRepo) SetReservationStatus(ctx context.Context, reservationID uuid.UUID, status string) error {

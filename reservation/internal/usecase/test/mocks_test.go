@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/entities"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )
@@ -18,9 +19,9 @@ type mockReservationRepo struct {
 	mock.Mock
 }
 
-func (m *mockReservationRepo) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (uuid.UUID, error) {
+func (m *mockReservationRepo) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (*entities.Reservation, error) {
 	args := m.Called(ctx, dto)
-	return args.Get(0).(uuid.UUID), args.Error(1)
+	return args.Get(0).(*entities.Reservation), args.Error(1)
 }
 
 func (m *mockReservationRepo) SetReservationStatus(ctx context.Context, reservationID uuid.UUID, status string) error {
@@ -42,7 +43,7 @@ type mockBroker struct {
 	mock.Mock
 }
 
-func (m *mockBroker) Publish(key string, data []byte) error {
-	args := m.Called(key, data)
+func (m *mockBroker) Publish(key string, payload any) error {
+	args := m.Called(key, payload)
 	return args.Error(0)
 }

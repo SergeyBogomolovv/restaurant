@@ -1,6 +1,8 @@
 package broker
 
 import (
+	"encoding/json"
+
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -13,12 +15,17 @@ func NewRabbitMQBroker(conn *amqp.Connection) *RabbitMQBroker {
 	return &RabbitMQBroker{conn: conn}
 }
 
-func (b *RabbitMQBroker) Publish(routingKey string, body []byte) error {
+func (b *RabbitMQBroker) Publish(routingKey string, payload any) error {
 	ch, err := b.conn.Channel()
 	if err != nil {
 		return err
 	}
 	defer ch.Close()
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
 	return ch.Publish(constants.ReservationExchange, routingKey, false, false, amqp.Publishing{
 		ContentType:  "application/json",

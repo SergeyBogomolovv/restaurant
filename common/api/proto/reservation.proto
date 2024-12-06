@@ -12,9 +12,10 @@ service Reservation {
 
 message CreateReservationRequest {
   string customer_id = 1;
-  string table_id = 4;
   int64 start_time = 2;
   int64 end_time = 3;
+  string table_id = 4;
+  int32 persons_count = 5;
 }
 
 message CreateReservationResponse {

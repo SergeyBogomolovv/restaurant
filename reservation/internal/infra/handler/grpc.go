@@ -46,10 +46,11 @@ func (h *reservationHandler) CreateReservation(ctx context.Context, req *pb.Crea
 	}
 
 	dto := &dto.CreateReservationDTO{
-		CustomerID: customerId,
-		TableID:    tableId,
-		StartTime:  time.Unix(req.StartTime, 0),
-		EndTime:    time.Unix(req.EndTime, 0),
+		CustomerID:   customerId,
+		TableID:      tableId,
+		StartTime:    time.Unix(req.StartTime, 0),
+		EndTime:      time.Unix(req.EndTime, 0),
+		PersonsCount: int(req.PersonsCount),
 	}
 	if dto.StartTime.After(dto.EndTime) || time.Now().After(dto.StartTime) {
 		return nil, status.Error(codes.InvalidArgument, "invalid time range")

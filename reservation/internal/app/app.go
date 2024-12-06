@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/SergeyBogomolovv/restaurant/reservation/internal/handler"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/infra/broker"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/infra/handler"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/repo"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/usecase"
 	"github.com/jmoiron/sqlx"

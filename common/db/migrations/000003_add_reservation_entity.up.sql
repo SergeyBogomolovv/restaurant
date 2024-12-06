@@ -9,5 +9,7 @@ CREATE TABLE IF NOT EXISTS reservations
 	end_time TIMESTAMP WITH TIME ZONE NOT NULL,
 	status reservation_status DEFAULT 'active',
 	table_id UUID NOT NULL REFERENCES tables(table_id),
-	CONSTRAINT check_end_time CHECK (end_time > start_time)
+	persons_count INT NOT NULL,
+	CONSTRAINT check_end_time CHECK (end_time > start_time),
+	CONSTRAINT check_persons_count CHECK (persons_count > 0 AND persons_count <= 8)
 );

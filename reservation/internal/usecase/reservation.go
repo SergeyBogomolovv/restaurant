@@ -9,28 +9,29 @@ import (
 
 	"github.com/SergeyBogomolovv/restaurant/common/constants"
 	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/dto"
+	"github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/entities"
 	errs "github.com/SergeyBogomolovv/restaurant/reservation/internal/domain/errors"
 	"github.com/google/uuid"
 )
 
-type Repo interface {
-	CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (uuid.UUID, error)
+type ReservationRepo interface {
+	CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (*entities.Reservation, error)
 	SetReservationStatus(ctx context.Context, reservationID uuid.UUID, status string) error
 	CloseEndedReservations(ctx context.Context) (int64, error)
 	GetTableExists(ctx context.Context, tableID uuid.UUID) (bool, error)
 }
 
-type Broker interface {
-	Publish(key string, body []byte) error
+type ReservationBroker interface {
+	Publish(key string, payload any) error
 }
 
 type reservationUsecase struct {
 	log    *slog.Logger
-	repo   Repo
-	broker Broker
+	repo   ReservationRepo
+	broker ReservationBroker
 }
 
-func NewReservationUsecase(log *slog.Logger, repo Repo, broker Broker) *reservationUsecase {
+func NewReservationUsecase(log *slog.Logger, repo ReservationRepo, broker ReservationBroker) *reservationUsecase {
 	usecase := &reservationUsecase{log: log, repo: repo, broker: broker}
 	return usecase
 }
@@ -64,13 +65,13 @@ func (u *reservationUsecase) RunEndedReservationsChecker(ctx context.Context, du
 	}
 }
 
-func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.CreateReservationDTO) (uuid.UUID, error) {
+func (u *reservationUsecase) CreateReservation(ctx context.Context, payload *dto.CreateReservationDTO) (uuid.UUID, error) {
 	const op = "reservation.Create"
 	log := u.log.With(slog.String("op", op))
 
 	log.Info("creating reservation")
 
-	tableExists, err := u.repo.GetTableExists(ctx, dto.TableID)
+	tableExists, err := u.repo.GetTableExists(ctx, payload.TableID)
 	if err != nil {
 		log.Error("failed to check table exists", "error", err)
 		return uuid.Nil, err
@@ -80,7 +81,7 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 		return uuid.Nil, errs.ErrTableNotFound
 	}
 
-	id, err := u.repo.CreateReservation(ctx, dto)
+	reservation, err := u.repo.CreateReservation(ctx, payload)
 	if err != nil {
 		if errors.Is(err, errs.ErrTableAlreadyReserved) {
 			log.Info("table already reserved")
@@ -90,17 +91,13 @@ func (u *reservationUsecase) CreateReservation(ctx context.Context, dto *dto.Cre
 		return uuid.Nil, err
 	}
 
-	payload, err := marshalReservationId(id)
-	if err != nil {
-		log.Error("failed to marshal payload", "error", err)
-		return uuid.Nil, err
-	}
-	if err := u.broker.Publish("reservation.create", payload); err != nil {
+	messagePayload := dto.NewReservationCreatedDTO(reservation)
+	if err := u.broker.Publish("reservation.created", messagePayload); err != nil {
 		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 
-	return id, nil
+	return reservation.CustomerID, nil
 }
 
 func (u *reservationUsecase) CancelReservation(ctx context.Context, reservationId uuid.UUID) error {
