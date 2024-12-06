@@ -34,15 +34,7 @@ func (b *RabbitMQBroker) Consume(queue string, handler func(amqp.Delivery)) erro
 	}
 	defer ch.Close()
 
-	msgs, err := ch.Consume(
-		queue,
-		"payments-service",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+	msgs, err := ch.Consume(queue, "payments-service", false, false, false, false, nil)
 	if err != nil {
 		return err
 	}
@@ -61,12 +53,12 @@ func (b *RabbitMQBroker) Setup() error {
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare("payments.reservation_queue", true, false, false, false, nil)
+	q, err := ch.QueueDeclare("payments.reservation_created_queue", true, false, false, false, nil)
 	if err != nil {
 		return err
 	}
 
-	if err := ch.QueueBind(q.Name, "reservation.*", constants.ReservationExchange, false, nil); err != nil {
+	if err := ch.QueueBind(q.Name, "reservation.created", constants.ReservationExchange, false, nil); err != nil {
 		return err
 	}
 	return nil
