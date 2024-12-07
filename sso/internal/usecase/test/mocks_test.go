@@ -91,6 +91,14 @@ func (m *mockCustomerRegisterRepo) CreateCustomer(ctx context.Context, payload *
 	return args.Get(0).(*dto.RegisterCustomerResult), args.Error(1)
 }
 
+func (m *mockCustomerRegisterRepo) CreateCustomerWithAction(
+	ctx context.Context,
+	payload *dto.CreateCustomerDTO,
+	action func(*dto.RegisterCustomerResult) error) (*dto.RegisterCustomerResult, error) {
+	args := m.Called(ctx, payload, action)
+	return args.Get(0).(*dto.RegisterCustomerResult), args.Error(1)
+}
+
 type mockAdminRegisterRepo struct {
 	mock.Mock
 }

@@ -52,3 +52,29 @@ func (r *customerRepo) CreateCustomer(ctx context.Context, payload *dto.CreateCu
 	}
 	return result, nil
 }
+
+func (r *customerRepo) CreateCustomerWithAction(
+	ctx context.Context,
+	payload *dto.CreateCustomerDTO,
+	action func(*dto.RegisterCustomerResult) error) (*dto.RegisterCustomerResult, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	result := new(dto.RegisterCustomerResult)
+
+	if err = tx.GetContext(ctx, result, `
+	INSERT INTO customers (email, password, name, birth_date) 
+	VALUES ($1, $2, $3, $4)
+	RETURNING customer_id, name, birth_date
+	`, payload.Email, payload.Password, payload.Name, payload.Birthdate); err != nil {
+		return nil, err
+	}
+
+	if err := action(result); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	return result, nil
+}

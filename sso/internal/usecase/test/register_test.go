@@ -24,15 +24,13 @@ func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 		result := &dto.RegisterCustomerResult{CustomerID: uuid.New()}
 
 		customerRepo.On("CheckEmailExists", ctx, email).Return(false, nil).Once()
-		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return(result, nil).Once()
-		mockBroker.On("Publish", "register.customer", result).Return(nil).Once()
+		customerRepo.On("CreateCustomerWithAction", ctx, mock.Anything, mock.Anything).Return(result, nil).Once()
 
 		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
 		assert.NoError(t, err)
 		assert.Equal(t, result.CustomerID, id)
 
 		customerRepo.AssertExpectations(t)
-		mockBroker.AssertExpectations(t)
 	})
 
 	t.Run("email exists", func(t *testing.T) {
@@ -55,33 +53,43 @@ func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, id, uuid.Nil)
 		assert.ErrorIs(t, err, simulatedErr)
+
+		customerRepo.AssertExpectations(t)
 	})
 
 	t.Run("create customer error", func(t *testing.T) {
 		email := "fail@example.com"
 		simulatedErr := errors.New("insert error")
 		customerRepo.On("CheckEmailExists", ctx, email).Return(false, nil).Once()
-		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return((*dto.RegisterCustomerResult)(nil), simulatedErr).Once()
+		customerRepo.On("CreateCustomerWithAction",
+			ctx,
+			mock.Anything,
+			mock.Anything).Return((*dto.RegisterCustomerResult)(nil), simulatedErr).Once()
 
 		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
 		assert.Error(t, err)
 		assert.Equal(t, id, uuid.Nil)
 		assert.ErrorIs(t, err, simulatedErr)
+
+		customerRepo.AssertExpectations(t)
 	})
 
 	t.Run("broker publish error", func(t *testing.T) {
 		email := "broker@example.com"
-		result := &dto.RegisterCustomerResult{CustomerID: uuid.New()}
 		simulatedErr := errors.New("broker error")
 
 		customerRepo.On("CheckEmailExists", ctx, email).Return(false, nil).Once()
-		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return(result, nil).Once()
-		mockBroker.On("Publish", "register.customer", result).Return(simulatedErr).Once()
+		customerRepo.On("CreateCustomerWithAction",
+			ctx,
+			mock.Anything,
+			mock.Anything).Return((*dto.RegisterCustomerResult)(nil), simulatedErr).Once()
 
 		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
 		assert.Error(t, err)
 		assert.Equal(t, id, uuid.Nil)
 		assert.ErrorIs(t, err, simulatedErr)
+
+		customerRepo.AssertExpectations(t)
 	})
 }
 

@@ -17,6 +17,10 @@ type Broker interface {
 type CustomerRegisterRepo interface {
 	CheckEmailExists(ctx context.Context, email string) (bool, error)
 	CreateCustomer(ctx context.Context, dto *dto.CreateCustomerDTO) (*dto.RegisterCustomerResult, error)
+	CreateCustomerWithAction(
+		ctx context.Context,
+		payload *dto.CreateCustomerDTO,
+		action func(*dto.RegisterCustomerResult) error) (*dto.RegisterCustomerResult, error)
 }
 
 type AdminRegisterRepo interface {
@@ -79,19 +83,20 @@ func (u *registerUsecase) RegisterCustomer(ctx context.Context, payload *dto.Reg
 		return uuid.Nil, err
 	}
 
-	result, err := u.customers.CreateCustomer(ctx, &dto.CreateCustomerDTO{
+	result, err := u.customers.CreateCustomerWithAction(ctx, &dto.CreateCustomerDTO{
 		Email:     payload.Email,
 		Name:      payload.Name,
 		Birthdate: payload.Birthdate,
 		Password:  hashedPassword,
+	}, func(res *dto.RegisterCustomerResult) error {
+		if err := u.broker.Publish("register.customer", res); err != nil {
+			log.Error("failed to publish message", "error", err)
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		log.Error("failed to create customer", "error", err)
-		return uuid.Nil, err
-	}
-
-	if err := u.broker.Publish("register.customer", result); err != nil {
-		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 
