@@ -52,3 +52,31 @@ func (r *waiterRepo) CreateWaiter(ctx context.Context, payload *dto.CreateWaiter
 	}
 	return result, nil
 }
+
+func (r *waiterRepo) CreateWaiterWithAction(
+	ctx context.Context,
+	payload *dto.CreateWaiterDTO,
+	action func(*dto.RegisterWaiterResult) error) (*dto.RegisterWaiterResult, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	result := new(dto.RegisterWaiterResult)
+
+	if err = tx.GetContext(ctx, result, `
+		INSERT INTO waiters (login, password, first_name, last_name) 
+		VALUES ($1, $2, $3, $4) 
+		RETURNING waiter_id, first_name, last_name
+		`, payload.Login, payload.Password, payload.FirstName, payload.LastName); err != nil {
+		return nil, err
+	}
+	if err := action(result); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}

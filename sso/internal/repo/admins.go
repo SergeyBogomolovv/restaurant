@@ -52,3 +52,31 @@ func (r *adminRepo) CreateAdmin(ctx context.Context, payload *dto.CreateAdminDTO
 	}
 	return result, nil
 }
+
+func (r *adminRepo) CreateAdminWithAction(
+	ctx context.Context,
+	payload *dto.CreateAdminDTO,
+	action func(*dto.RegisterAdminResult) error) (*dto.RegisterAdminResult, error) {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	result := new(dto.RegisterAdminResult)
+
+	if err = tx.GetContext(ctx, result, `
+		INSERT INTO admins (login, password, note)
+		VALUES ($1, $2, $3)
+		RETURNING admin_id, login
+		`, payload.Login, payload.Password, payload.Note); err != nil {
+		return nil, err
+	}
+	if err := action(result); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}

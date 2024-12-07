@@ -61,6 +61,8 @@ func (r *customerRepo) CreateCustomerWithAction(
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback()
+
 	result := new(dto.RegisterCustomerResult)
 
 	if err = tx.GetContext(ctx, result, `
@@ -70,11 +72,11 @@ func (r *customerRepo) CreateCustomerWithAction(
 	`, payload.Email, payload.Password, payload.Name, payload.Birthdate); err != nil {
 		return nil, err
 	}
-
 	if err := action(result); err != nil {
-		tx.Rollback()
 		return nil, err
 	}
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 	return result, nil
 }

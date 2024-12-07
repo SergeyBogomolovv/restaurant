@@ -26,11 +26,19 @@ type CustomerRegisterRepo interface {
 type AdminRegisterRepo interface {
 	CheckLoginExists(ctx context.Context, login string) (bool, error)
 	CreateAdmin(ctx context.Context, dto *dto.CreateAdminDTO) (*dto.RegisterAdminResult, error)
+	CreateAdminWithAction(
+		ctx context.Context,
+		payload *dto.CreateAdminDTO,
+		action func(*dto.RegisterAdminResult) error) (*dto.RegisterAdminResult, error)
 }
 
 type WaiterRegisterRepo interface {
 	CheckLoginExists(ctx context.Context, login string) (bool, error)
 	CreateWaiter(ctx context.Context, dto *dto.CreateWaiterDTO) (*dto.RegisterWaiterResult, error)
+	CreateWaiterWithAction(
+		ctx context.Context,
+		payload *dto.CreateWaiterDTO,
+		action func(*dto.RegisterWaiterResult) error) (*dto.RegisterWaiterResult, error)
 }
 
 type registerUsecase struct {
@@ -131,19 +139,20 @@ func (u *registerUsecase) RegisterWaiter(ctx context.Context, payload *dto.Regis
 		return uuid.Nil, err
 	}
 
-	result, err := u.waiters.CreateWaiter(ctx, &dto.CreateWaiterDTO{
+	result, err := u.waiters.CreateWaiterWithAction(ctx, &dto.CreateWaiterDTO{
 		Login:     payload.Login,
 		Password:  hashedPassword,
 		FirstName: payload.FirstName,
 		LastName:  payload.LastName,
+	}, func(res *dto.RegisterWaiterResult) error {
+		if err := u.broker.Publish("register.waiter", res); err != nil {
+			log.Error("failed to publish message", "error", err)
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		log.Error("failed to create waiter", "error", err)
-		return uuid.Nil, err
-	}
-
-	if err := u.broker.Publish("register.waiter", result); err != nil {
-		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 
@@ -179,18 +188,19 @@ func (u *registerUsecase) RegisterAdmin(ctx context.Context, payload *dto.Regist
 		return uuid.Nil, err
 	}
 
-	result, err := u.admins.CreateAdmin(ctx, &dto.CreateAdminDTO{
+	result, err := u.admins.CreateAdminWithAction(ctx, &dto.CreateAdminDTO{
 		Login:    payload.Login,
 		Password: hashedPassword,
 		Note:     payload.Note,
+	}, func(res *dto.RegisterAdminResult) error {
+		if err := u.broker.Publish("register.admin", res); err != nil {
+			log.Error("failed to publish message", "error", err)
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		log.Error("failed to create admin", "error", err)
-		return uuid.Nil, err
-	}
-
-	if err := u.broker.Publish("register.admin", result); err != nil {
-		log.Error("failed to publish message", "error", err)
 		return uuid.Nil, err
 	}
 

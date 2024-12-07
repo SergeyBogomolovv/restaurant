@@ -113,6 +113,14 @@ func (m *mockAdminRegisterRepo) CreateAdmin(ctx context.Context, payload *dto.Cr
 	return args.Get(0).(*dto.RegisterAdminResult), args.Error(1)
 }
 
+func (m *mockAdminRegisterRepo) CreateAdminWithAction(
+	ctx context.Context,
+	payload *dto.CreateAdminDTO,
+	action func(*dto.RegisterAdminResult) error) (*dto.RegisterAdminResult, error) {
+	args := m.Called(ctx, payload, action)
+	return args.Get(0).(*dto.RegisterAdminResult), args.Error(1)
+}
+
 type mockWaiterRegisterRepo struct {
 	mock.Mock
 }
@@ -127,10 +135,10 @@ func (m *mockWaiterRegisterRepo) CreateWaiter(ctx context.Context, payload *dto.
 	return args.Get(0).(*dto.RegisterWaiterResult), args.Error(1)
 }
 
-type mockBroker struct {
-	mock.Mock
-}
-
-func (b *mockBroker) Publish(routingKey string, payload any) error {
-	return b.Called(routingKey, payload).Error(0)
+func (m *mockWaiterRegisterRepo) CreateWaiterWithAction(
+	ctx context.Context,
+	payload *dto.CreateWaiterDTO,
+	action func(*dto.RegisterWaiterResult) error) (*dto.RegisterWaiterResult, error) {
+	args := m.Called(ctx, payload, action)
+	return args.Get(0).(*dto.RegisterWaiterResult), args.Error(1)
 }
