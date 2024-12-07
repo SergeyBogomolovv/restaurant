@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/SergeyBogomolovv/restaurant/sso/internal/domain/dto"
@@ -45,6 +46,43 @@ func TestRegisterUsecase_RegisterCustomer(t *testing.T) {
 		customerRepo.AssertExpectations(t)
 	})
 
+	t.Run("check email error", func(t *testing.T) {
+		email := "error@example.com"
+		simulatedErr := errors.New("database error")
+		customerRepo.On("CheckEmailExists", ctx, email).Return(false, simulatedErr).Once()
+
+		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
+		assert.Error(t, err)
+		assert.Equal(t, id, uuid.Nil)
+		assert.ErrorIs(t, err, simulatedErr)
+	})
+
+	t.Run("create customer error", func(t *testing.T) {
+		email := "fail@example.com"
+		simulatedErr := errors.New("insert error")
+		customerRepo.On("CheckEmailExists", ctx, email).Return(false, nil).Once()
+		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return((*dto.RegisterCustomerResult)(nil), simulatedErr).Once()
+
+		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
+		assert.Error(t, err)
+		assert.Equal(t, id, uuid.Nil)
+		assert.ErrorIs(t, err, simulatedErr)
+	})
+
+	t.Run("broker publish error", func(t *testing.T) {
+		email := "broker@example.com"
+		result := &dto.RegisterCustomerResult{CustomerID: uuid.New()}
+		simulatedErr := errors.New("broker error")
+
+		customerRepo.On("CheckEmailExists", ctx, email).Return(false, nil).Once()
+		customerRepo.On("CreateCustomer", ctx, mock.Anything).Return(result, nil).Once()
+		mockBroker.On("Publish", "register.customer", result).Return(simulatedErr).Once()
+
+		id, err := usecase.RegisterCustomer(ctx, &dto.RegisterCustomerDTO{Email: email})
+		assert.Error(t, err)
+		assert.Equal(t, id, uuid.Nil)
+		assert.ErrorIs(t, err, simulatedErr)
+	})
 }
 
 func TestRegisterUsecase_RegisterWaiter(t *testing.T) {
@@ -88,6 +126,17 @@ func TestRegisterUsecase_RegisterWaiter(t *testing.T) {
 
 		waiterRepo.AssertExpectations(t)
 	})
+
+	t.Run("check login error", func(t *testing.T) {
+		login := "error123"
+		simulatedErr := errors.New("database error")
+		waiterRepo.On("CheckLoginExists", ctx, login).Return(false, simulatedErr).Once()
+
+		id, err := usecase.RegisterWaiter(ctx, &dto.RegisterWaiterDTO{Token: key, Login: login})
+		assert.Error(t, err)
+		assert.Equal(t, id, uuid.Nil)
+		assert.ErrorIs(t, err, simulatedErr)
+	})
 }
 
 func TestRegisterUsecase_RegisterAdmin(t *testing.T) {
@@ -119,17 +168,25 @@ func TestRegisterUsecase_RegisterAdmin(t *testing.T) {
 		id, err := usecase.RegisterAdmin(ctx, payload)
 		assert.ErrorIs(t, err, errs.ErrInvalidSecretToken)
 		assert.Equal(t, id, uuid.Nil)
-		adminRepo.AssertExpectations(t)
 	})
 
 	t.Run("login exists", func(t *testing.T) {
 		payload := &dto.RegisterAdminDTO{Login: "admin123", Token: key}
-		adminRepo.On("CheckLoginExists", ctx, payload.Login).Return(true, nil)
+		adminRepo.On("CheckLoginExists", ctx, payload.Login).Return(true, nil).Once()
 
 		id, err := usecase.RegisterAdmin(ctx, payload)
 		assert.ErrorIs(t, err, errs.ErrAdminAlreadyExists)
 		assert.Equal(t, id, uuid.Nil)
+	})
 
-		adminRepo.AssertExpectations(t)
+	t.Run("check login error", func(t *testing.T) {
+		login := "error123"
+		simulatedErr := errors.New("database error")
+		adminRepo.On("CheckLoginExists", ctx, login).Return(false, simulatedErr).Once()
+
+		id, err := usecase.RegisterAdmin(ctx, &dto.RegisterAdminDTO{Token: key, Login: login})
+		assert.Error(t, err)
+		assert.Equal(t, id, uuid.Nil)
+		assert.ErrorIs(t, err, simulatedErr)
 	})
 }
